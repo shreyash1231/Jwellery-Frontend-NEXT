@@ -61,10 +61,12 @@ export default function Header() {
       )}
 
       {/* SIDEBAR */}
-      <div
-        className={`fixed top-0 left-0 h-full w-64 bg-[#f3efe8] shadow-lg transform transition-transform duration-300 z-50 
-        ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
-      >
+     <div
+  className={`fixed top-0 left-0 h-full w-64 bg-[#f3efe8] shadow-lg 
+  transform transition-transform duration-300 z-50 
+  overflow-y-auto scroll-smooth pb-10
+  ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
+>
         {/* TOP NAV */}
         {navItems.map(({ label, href }) => {
           const isActive = pathname === href;
