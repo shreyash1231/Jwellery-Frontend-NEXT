@@ -26,6 +26,12 @@ export const fetchCategories = async () => {
   return res.data;
 };
 
+export const fetchCategoriesProducts = async (id:string) => {
+  const res = await axios.get(`${API}/api/v1/user/get-All-products?categoryId=${id}`);
+  return res.data;
+};
+
+
 
 export const fetchShopProductFunction = async () => {
   const res = await axios.get(`${API}/api/v1/user/get-shop-by-prod-categories`);

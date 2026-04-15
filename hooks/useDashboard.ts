@@ -1,4 +1,4 @@
-import { fetchAllProducts, fetchBanners, fetchBestProducts, fetchCategories, fetchShopProductFunction, getProductsByCategory } from "@/service/dashboardService";
+import { fetchAllProducts, fetchBanners, fetchBestProducts, fetchCategories, fetchCategoriesProducts, fetchShopProductFunction, getProductsByCategory } from "@/service/dashboardService";
 import { useQuery } from "@tanstack/react-query";
 
 
@@ -46,6 +46,16 @@ export const useCategories = () => {
   });
 };
 
+export const useCategoriesProduct = (id: string) => {
+  return useQuery({
+    queryKey: ["categories", id], // ✅ include id
+    queryFn: () => fetchCategoriesProducts(id), // ✅ wrap in function
+    enabled: !!id, // ✅ prevent early call
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    retry: 2,
+  });
+};
 
 export const useShopByProductFunction = () => {
   return useQuery({

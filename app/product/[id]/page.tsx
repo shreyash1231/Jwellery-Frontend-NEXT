@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams,useRouter } from "next/navigation";
-
+import Loader from "@/components/Loader"
+import { API } from "@/service/dashboardService";
+import { useCategoriesProduct } from "@/hooks/useDashboard";
+import ProductDisplay from "@/components/ProductDisplay";
+import Footer from "@/components/Footer";
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_BASE_URL;
 
 export default function ProductDetail() {
@@ -23,7 +27,7 @@ export default function ProductDetail() {
 
     const fetchProduct = async () => {
       const res = await fetch(
-        `https://render-jwellery-application-1.onrender.com/api/v1/user/get-product-by-id/${id}`
+        `${API}/api/v1/user/get-product-by-id/${id}`
       );
       const data = await res.json();
 
@@ -34,9 +38,17 @@ export default function ProductDetail() {
     fetchProduct();
   }, [id]);
 
-  if (!product) {
-    return <div className="text-center mt-10">Loading...</div>;
-  }
+  const categoryId = product?.categoryId?._id;
+
+ const {
+    data: categoryProducts,
+    isLoading: isCategoryLoading,
+    isError,
+    } = useCategoriesProduct(categoryId);
+
+if (!product || isCategoryLoading) {
+  return <Loader />;
+}
 
   return (
   <div className="min-h-screen py-10">
@@ -182,5 +194,11 @@ export default function ProductDetail() {
 
       </div>
     </div>
+    <ProductDisplay
+    title="Related Products"
+    subtitle="Explore more pieces from the same category."
+    products={categoryProducts.data.products}
+    />
+    <Footer/>
   </div>
 );}
