@@ -1,0 +1,186 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams,useRouter } from "next/navigation";
+
+const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_BASE_URL;
+
+export default function ProductDetail() {
+  const { id } = useParams();
+  const router = useRouter();
+
+  const [product, setProduct] = useState<any>(null);
+  const [selectedImage, setSelectedImage] = useState<string>("");
+
+  const [openSection, setOpenSection] = useState<string | null>("");
+
+  const toggleSection = (section: string) => {
+    setOpenSection(openSection === section ? null : section);
+  };
+
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchProduct = async () => {
+      const res = await fetch(
+        `https://render-jwellery-application-1.onrender.com/api/v1/user/get-product-by-id/${id}`
+      );
+      const data = await res.json();
+
+      setProduct(data.data);
+      setSelectedImage(data.data.imageUrl[0]);
+    };
+
+    fetchProduct();
+  }, [id]);
+
+  if (!product) {
+    return <div className="text-center mt-10">Loading...</div>;
+  }
+
+  return (
+  <div className="min-h-screen py-10">
+    <div className="max-w-7xl mx-auto px-6 mb-6">
+  <button
+    onClick={() => router.push("/")}
+    className="flex items-center gap-2 text-gray-700 hover:text-black font-medium text-3xl"
+  >
+    ← Back to Home
+  </button>
+</div>
+    <div
+    className={`max-w-7xl mx-auto grid md:grid-cols-2 gap-10 px-6 ${
+        openSection ? "items-start" : "items-stretch"
+    }`}
+    >
+
+      {/* LEFT IMAGE CARD */}
+      <div className="bg-white p-5 rounded-2xl shadow-md">
+        <img
+          src={`${IMAGE_BASE_URL}/${selectedImage}`}
+          className="w-full h-[540px] object-cover rounded-xl"
+        />
+
+        {/* Thumbnails */}
+        <div className="flex gap-3 mt-3 overflow-x-auto whitespace-nowrap scrollbar-hide">
+          {product.imageUrl.map((img: string, i: number) => (
+            <img
+              key={i}
+              src={`${IMAGE_BASE_URL}/${img}`}
+              onClick={() => setSelectedImage(img)}
+              className={`w-20 h-20 object-cover rounded cursor-pointer border-2 ${
+                selectedImage === img ? "border-red-500" : "border-gray-300"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* RIGHT CONTENT CARD */}
+      <div className="bg-white p-6 rounded-2xl shadow-md flex flex-col gap-5">
+
+        {/* Title */}
+        <h1 className="text-3xl font-semibold">
+          {product.name} -{" "}
+          <span className="text-red-500">
+            {product.categoryId?.name}
+          </span>
+        </h1>
+
+        {/* Price */}
+        <div className="text-3xl text-red-500 font-bold">
+          Rs {product.sellingPrice}/-
+        </div>
+
+        {/* Tax */}
+        <p className="text-gray-500 text-sm">
+          Tax included. Shipping calculated at checkout
+        </p>
+
+        {/* Description */}
+        <p className="text-gray-700 leading-relaxed">
+          {product.description}
+        </p>
+
+        {/* Free Shipping */}
+        <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border">
+          <span>🚚</span>
+          <div>
+            <p className="font-semibold">Free Shipping On Orders</p>
+            <p className="text-sm text-gray-500">Rs 999+</p>
+          </div>
+        </div>
+
+        {/* ACCORDIONS */}
+        <div className="border-t pt-4">
+          <button
+            onClick={() => toggleSection("returns")}
+            className="flex justify-between w-full font-semibold text-lg"
+          >
+            Returns & Help
+            <span>{openSection === "returns" ? "▲" : "▼"}</span>
+          </button>
+
+          {openSection === "returns" && (
+            <p className="text-gray-600 mt-2 whitespace-pre-line">
+              {product.benefits}
+            </p>
+          )}
+        </div>
+         <div className="border-t pt-4">
+          <button
+            onClick={() => toggleSection("quantity")}
+            className="flex justify-between w-full font-semibold text-lg"
+          >
+            Quantity
+            <span>{openSection === "quantity" ? "▲" : "▼"}</span>
+          </button>
+
+          {openSection === "quantity" && (
+            <p className="text-gray-600 font-bold mt-2 whitespace-pre-line">
+              {product.quantity}
+            </p>
+          )}
+        </div>
+
+        <div className="border-t pt-4">
+          <button
+            onClick={() => toggleSection("use")}
+            className="flex justify-between w-full font-semibold text-lg"
+          >
+            How to Use
+            <span>{openSection === "use" ? "▲" : "▼"}</span>
+          </button>
+
+          {openSection === "use" && (
+            <p className="text-gray-600 mt-2">
+              {product.use}
+            </p>
+          )}
+        </div>
+
+        <div className="border-t pt-4">
+          <button
+            onClick={() => toggleSection("info")}
+            className="flex justify-between w-full font-semibold text-lg"
+          >
+            Additional Information
+            <span>{openSection === "info" ? "▲" : "▼"}</span>
+          </button>
+
+          {openSection === "info" && (
+            <p className="text-gray-600 mt-2 whitespace-pre-line">
+              {product.additionalInfo}
+            </p>
+          )}
+        </div>
+
+        {/* ADD TO CART */}
+        <button className="mt-6 bg-red-600 text-white py-3 rounded-xl text-lg font-semibold hover:bg-red-700 transition shadow">
+          Add To Cart
+        </button>
+
+      </div>
+    </div>
+  </div>
+);}

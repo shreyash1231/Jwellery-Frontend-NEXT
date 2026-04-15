@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ProductDisplayProps } from "@/type/api";
 import { ProductCard } from "./ProductCard";
+import Link from "next/link";
 
 export default function ProductDisplay({
   title,
@@ -42,12 +43,14 @@ export default function ProductDisplay({
       {/* PRODUCTS GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-fit mx-auto">
         {currentProducts.map((item) => (
+        <Link className="cursor-pointer" key={item._id} href={`/product/${item._id}`}>
           <ProductCard
             key={item._id}
             title={item.name}
             price={`Rs ${item.sellingPrice}/-`}
             image={`${process.env.NEXT_PUBLIC_IMAGE_BASE_URL}/${item.imageUrl[0]}`}
           />
+        </Link>
         ))}
       </div>
 
