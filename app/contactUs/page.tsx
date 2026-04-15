@@ -6,7 +6,6 @@ export default function ContactUs(){
     return(
         <div>
             <ContactUsCard/>
-            <Footer/>
         </div>
     );
 }

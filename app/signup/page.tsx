@@ -7,7 +7,6 @@ export default function Signup(){
     return(
         <>
         <RegisterUser/>
-        <Footer/>
         </>
     );
 }

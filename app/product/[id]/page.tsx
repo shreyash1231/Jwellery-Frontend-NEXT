@@ -199,6 +199,5 @@ if (!product || isCategoryLoading) {
     subtitle="Explore more pieces from the same category."
     products={categoryProducts.data.products}
     />
-    <Footer/>
   </div>
 );}

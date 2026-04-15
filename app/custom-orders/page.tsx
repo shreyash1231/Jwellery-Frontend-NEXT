@@ -6,7 +6,6 @@ export default function CustomOrder() {
   return (
     <>
     <Customcard/>
-    <Footer/>
     </>
    
   );

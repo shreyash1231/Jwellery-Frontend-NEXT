@@ -115,7 +115,6 @@ if (isError) {
   <Link href="/categories">View All Products</Link>
   </Button>
 </div>
-<Footer/>
     </div>
   );
 }

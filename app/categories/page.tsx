@@ -26,7 +26,6 @@ export default function Categories(){
             ) : (
               <p className="text-center text-gray-500 mt-10">Product not found</p>
             )}
-            <Footer/>
         </div>
     );
 }

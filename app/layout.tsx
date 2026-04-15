@@ -5,6 +5,7 @@ import "./globals.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { Toaster } from "sonner";
+import Footer from "@/components/Footer";
 export default function RootLayout({children,}: {children: React.ReactNode;}){
 
   const [queryClient] = useState(() => new QueryClient());
@@ -14,6 +15,7 @@ export default function RootLayout({children,}: {children: React.ReactNode;}){
           <QueryClientProvider client={queryClient}>
             <Header />
           {children}
+          <Footer/>
            <Toaster position="top-right" richColors />
             </QueryClientProvider>
       </body>
