@@ -1,8 +1,60 @@
+
+
+"use client"
 import Image from "next/image";
 import { Card } from "./ui/card";
 import Link from "next/link";
+import { useState } from "react";
+import { toast } from "sonner";
+import { useContact } from "@/hooks/useContact";
 
 export default function ContactUsCard() {
+    const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [message, setMessage] = useState("");
+
+  const { mutate, isPending } = useContact();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!firstName || !lastName || !email || !phone || !message) {
+      toast.error("Please fill all fields");
+      return;
+    }
+
+    const loadingToast = toast.loading("Submitting...");
+
+    mutate(
+      {
+        firstName,
+        lastName,
+        email,
+        phone,
+        message,
+      },
+      {
+        onSuccess: () => {
+          toast.dismiss(loadingToast);
+          toast.success("Query submitted successfully ✅");
+
+          setFirstName("");
+          setLastName("");
+          setEmail("");
+          setPhone("");
+          setMessage("");
+        },
+        onError: (error: any) => {
+          toast.dismiss(loadingToast);
+          toast.error(
+            error?.response?.data?.message || "Something went wrong ❌"
+          );
+        },
+      }
+    );
+  };
   return (
     <div className="min-h-screen flex items-center justify-center p-4 md:p-6">
       <Card className="md:h-[500px] lg:h-[580px] xl:h-[620px] w-full max-w-5xl bg-[#fdf7e6] overflow-hidden p-0 shadow-xl rounded-3xl">
@@ -30,7 +82,7 @@ export default function ContactUsCard() {
                 Send us your custom order request/ query/ emergency info or order/ message
               </p>
             </div>
-            <form className="flex flex-col gap-4">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
 
               {/* ✅ md = 2 columns, lg+ = back to 1 column */}
               <div className="flex flex-col md:grid md:grid-cols-2 lg:grid-cols-2 gap-4">
@@ -40,6 +92,8 @@ export default function ContactUsCard() {
                   <input
                     type="text"
                     placeholder="Enter your first name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
                     className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-black/20"
                   />
                 </div>
@@ -49,6 +103,8 @@ export default function ContactUsCard() {
                   <input
                     type="text"
                     placeholder="Enter your last name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
                     className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-black/20"
                   />
                 </div>
@@ -58,6 +114,8 @@ export default function ContactUsCard() {
                   <input
                     type="email"
                     placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-black/20"
                   />
                 </div>
@@ -67,6 +125,8 @@ export default function ContactUsCard() {
                   <input
                     type="tel"
                     placeholder="Enter your phone number"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
                     className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-black/20"
                   />
                 </div>
@@ -76,6 +136,8 @@ export default function ContactUsCard() {
                   <input
                     type="password"
                     placeholder="Enter your password"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
                     className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-black/20"
                   />
                 </div>
@@ -87,11 +149,11 @@ export default function ContactUsCard() {
 
                 <button
                   type="submit"
+                  disabled={isPending}
                   className="bg-[#17587c9c] hover:bg-[#207daf9c] text-white rounded-lg p-2 transition"
                 >
-                  Submit
+                  {isPending ? "Submitting..." : "Submit"}
                 </button>
-
                 <Link
                   href="/signin"
                   className="bg-[#22c55e] text-white text-center rounded-lg p-2 hover:bg-[#0f8e3d] transition"

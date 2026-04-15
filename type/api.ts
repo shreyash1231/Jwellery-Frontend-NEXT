@@ -16,3 +16,19 @@ export type ProductCardProps = {
   price: string;
   image: string;
 };
+
+export interface CustomOrderPayload {
+  type: string;
+  date: string;
+  address: string;
+}
+
+
+export interface ContactPayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  message: string;
+}
+

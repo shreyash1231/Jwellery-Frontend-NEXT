@@ -1,8 +1,56 @@
+"use client";
+
 import Image from "next/image";
 import { Card } from "./ui/card";
 import Link from "next/link";
+import { useState } from "react";
+import { toast } from "sonner";
+import { useLogin } from "@/hooks/useLogin";
 
 export default function SignIn() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const { mutate, isPending } = useLogin();
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!email || !password) {
+      toast.error("Please fill all fields");
+      return;
+    }
+
+    const loadingToast = toast.loading("Logging in...");
+
+    mutate(
+      { email, password },
+      {
+        onSuccess: (data) => {
+          toast.dismiss(loadingToast);
+          localStorage.setItem("token", data?.data?.token);
+
+          // optional: store user
+          localStorage.setItem(
+            "user",
+            JSON.stringify(data?.data?.user)
+          );
+
+          toast.success("Login successful ✅");
+
+          // redirect (optional)
+          window.location.href = "/";
+        },
+        onError: (error: any) => {
+          toast.dismiss(loadingToast);
+          toast.error(
+            error?.response?.data?.message || "Login failed ❌"
+          );
+        },
+      }
+    );
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
       <Card className="md:h-[500px] lg:h-[580px] xl:h-[620px] w-full max-w-5xl bg-[#fdf7e6] overflow-hidden p-0 shadow-xl rounded-3xl">
@@ -21,9 +69,11 @@ export default function SignIn() {
           </div>
 
           {/* Form Section */}
-          <div className="flex flex-col justify-center gap-5 p-6 md:p-12 not-open:xl:p-8 w-full md:w-1/2">
+          <form
+            onSubmit={handleLogin}
+            className="flex flex-col justify-center gap-5 p-6 md:p-12 w-full md:w-1/2"
+          >
             
-            {/* Heading */}
             <div className="flex flex-col gap-1">
               <h2 className="text-2xl md:text-3xl font-semibold">Sign In</h2>
               <p className="text-sm md:text-base text-gray-500">
@@ -37,7 +87,9 @@ export default function SignIn() {
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-black/20"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full border rounded-lg p-2"
               />
             </div>
 
@@ -47,23 +99,30 @@ export default function SignIn() {
               <input
                 type="password"
                 placeholder="Enter your password"
-                className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-black/20"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full border rounded-lg p-2"
               />
             </div>
 
-       
-           <div className="flex flex-col gap-2">
-              <button className="bg-[#17587c9c] hover:bg-[#207daf9c] text-white rounded-lg p-2 mt-2 transition">
-              Login
-            </button>
+            <div className="flex flex-col gap-2">
+              <button
+                type="submit"
+                disabled={isPending}
+                className="bg-[#17587c9c] hover:bg-[#207daf9c] text-white rounded-lg p-2 mt-2 transition"
+              >
+                {isPending ? "Logging in..." : "Login"}
+              </button>
 
-            {/* Signup CTA */}
-            <button className="bg-[#22c55e] border text-white cursor-pointer rounded-lg p-2 hover:bg-[#0f8e3d] hover:text-white transition">
-              <Link href="/signup">New here? Sign up</Link>
-            </button>
-           </div>
+              <Link
+                href="/signup"
+                className="bg-[#22c55e] text-white text-center rounded-lg p-2 hover:bg-[#0f8e3d] transition"
+              >
+                New here? Sign up
+              </Link>
+            </div>
 
-          </div>
+          </form>
         </div>
       </Card>
     </div>

@@ -1,14 +1,30 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useCategories, useShopByProductFunction } from "@/hooks/useDashboard";
-
+import { useRouter } from "next/navigation";
 export default function Header() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [showFunction, setShowFunction] = useState(false);
   const [showProduct, setShowProduct] = useState(false);
+  const router = useRouter();
 
+  useEffect(() => {
+    const token = localStorage.getItem("token"); // or your key name
+    setIsLoggedIn(!!token);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user"); // if you're storing user data
+
+    setIsLoggedIn(false);
+    setIsOpen(false);
+
+    router.push("/signin"); // redirect after logout
+  };
   const pathname = usePathname();
 
   const { data: getdataCategory } = useCategories();
@@ -27,9 +43,17 @@ export default function Header() {
   ];
 
   const bottomNavItems = [
-    { label: "About Us", href: "/" },
+    { label: "About Us", href: "/AboutUs" },
     { label: "Contact", href: "/contactUs" },
-    { label: "Sign In", href: "/signin" },
+
+    ...(isLoggedIn
+      ? [
+          { label: "Order History", href: "/order-history" },
+          { label: "Custom Order History", href: "/custom-order-history" },
+          { label: "Profile", href: "/profile" },
+          { label: "Logout", href: "#" }, // optional
+        ]
+      : [{ label: "Sign In", href: "/signin" }]),
   ];
 
   return (
@@ -167,15 +191,19 @@ export default function Header() {
             </div>
           )}
         </div>
-
-        {/* BOTTOM NAV */}
         {bottomNavItems.map(({ label, href }) => {
           const isActive = pathname === href;
 
           return (
             <div
               key={label}
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                if (label === "Logout") {
+                  handleLogout();   
+                } else {
+                  setIsOpen(false);
+                }
+              }}
               className={`flex items-stretch border-b-2 cursor-pointer
               ${isActive ? "border-gray-900" : "border-gray-400"}`}
             >
@@ -188,20 +216,26 @@ export default function Header() {
                 }`}
               />
 
-              <Link
-                href={href}
-                className={`flex-1 pl-5 py-3 text-xl font-medium
-                ${
-                  isActive
-                    ? "text-gray-900 font-semibold"
-                    : "text-gray-500 hover:text-blue-600"
-                }`}
-              >
-                {label}
-              </Link>
+              {label === "Logout" ? (
+                <span className="flex-1 pl-5 py-3 text-xl font-medium text-red-500 hover:text-red-700">
+                  Logout
+                </span>
+              ) : (
+                <Link
+                  href={href}
+                  className={`flex-1 pl-5 py-3 text-xl font-medium
+                  ${
+                    isActive
+                      ? "text-gray-900 font-semibold"
+                      : "text-gray-500 hover:text-blue-600"
+                  }`}
+                >
+                  {label}
+                </Link>
+              )}
             </div>
           );
-        })}
+          })}
       </div>
     </>
   );

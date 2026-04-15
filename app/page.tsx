@@ -7,19 +7,26 @@ import Link from "next/link";
 import Footer from "@/components/Footer";
 import Category from "@/components/Category";
 import { useBanners, useBestProducts } from "@/hooks/useDashboard";
+import Loader from "@/components/Loader";
 
 export default function Home() {
-  const { data: bannerData, isLoading: bannerLoading } = useBanners();
-  const { data: productData, isLoading: productLoading } = useBestProducts();
+const { data: bannerData, isLoading: bannerLoading, isError: bannerError } = useBanners();
+const { data: productData, isLoading: productLoading, isError: productError } = useBestProducts();
 
-  if (bannerLoading || productLoading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="w-10 h-10 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
-      </div>
-    );
-  }
+const isLoading = bannerLoading || productLoading;
+const isError = bannerError || productError;
 
+if (isLoading) {
+  return <Loader />;
+}
+
+if (isError) {
+  return (
+    <div className="text-center text-red-500 py-10">
+      Something went wrong
+    </div>
+  );
+}
   return (
     <div className="flex flex-col gap-12">
       {bannerData?.data?.map((banner: any) => (
