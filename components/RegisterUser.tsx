@@ -1,8 +1,69 @@
+
+"use client";
+
+import { useState } from "react";
+import axios from "axios";
 import Image from "next/image";
 import { Card } from "./ui/card";
 import Link from "next/link";
+import { useRegister } from "@/hooks/useLogin";
+import { RegisterFormState } from "@/type/api";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function SignUp() {
+  const router = useRouter();
+
+  const { mutate, isPending } = useRegister(() => {
+    router.push("/otp");
+  });
+
+  const [formData, setFormData] = useState<RegisterFormState>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    const payload = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+      password: formData.password,
+      countryCode: "+91",
+    };
+
+    mutate(payload);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 md:p-6">
       <Card className="md:h-[500px] lg:h-[580px] xl:h-[620px] w-full max-w-5xl bg-[#fdf7e6] overflow-hidden p-0 shadow-xl rounded-3xl">
@@ -35,13 +96,16 @@ export default function SignUp() {
             </div>
 
             {/* Form */}
-            <form className="flex flex-col gap-4">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
 
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-medium">First Name</label>
                   <input
+                    name="firstName"
                     type="text"
+                    value={formData.firstName}
+                    onChange={handleChange}
                     placeholder="Enter your first name"
                     className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-black/20"
                   />
@@ -50,7 +114,10 @@ export default function SignUp() {
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-medium">Last Name</label>
                   <input
+                    name="lastName"
                     type="text"
+                    value={formData.lastName}
+                    onChange={handleChange}
                     placeholder="Enter your last name"
                     className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-black/20"
                   />
@@ -59,7 +126,10 @@ export default function SignUp() {
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-medium">Email</label>
                   <input
+                    name="email"
                     type="email"
+                    value={formData.email}
+                    onChange={handleChange}
                     placeholder="Enter your email"
                     className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-black/20"
                   />
@@ -68,7 +138,10 @@ export default function SignUp() {
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-medium">Phone Number</label>
                   <input
+                    name="phone"
                     type="tel"
+                    value={formData.phone}
+                    onChange={handleChange}
                     placeholder="Enter your phone number"
                     className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-black/20"
                   />
@@ -77,7 +150,10 @@ export default function SignUp() {
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-medium">Password</label>
                   <input
+                    name="password"
                     type="password"
+                    value={formData.password}
+                    onChange={handleChange}
                     placeholder="Enter your password"
                     className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-black/20"
                   />
@@ -86,7 +162,10 @@ export default function SignUp() {
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-medium">Confirm Password</label>
                   <input
+                    name="confirmPassword"
                     type="password"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
                     placeholder="Confirm your password"
                     className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-black/20"
                   />
@@ -101,7 +180,7 @@ export default function SignUp() {
                   type="submit"
                   className="bg-[#17587c9c] hover:bg-[#207daf9c] text-white rounded-lg p-2 transition"
                 >
-                  Sign Up
+                  Get OTP to Sign Up
                 </button>
 
                 <Link

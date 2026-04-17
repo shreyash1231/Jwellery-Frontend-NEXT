@@ -24,7 +24,17 @@ export default function Categories(){
                 products={productData.data.products}
               />
             ) : (
-              <p className="text-center text-gray-500 mt-10">Product not found</p>
+              <div className="text-center py-16">
+    <img
+      src="/images/item-not-found.webp"
+      alt="No products"
+      className="w-[220px] mx-auto mb-5 opacity-80"
+    />
+    <h3 className="text-xl mb-2">Product Not Found</h3>
+    <p className="text-gray-500">
+      No products are available right now.
+    </p>
+  </div>
             )}
         </div>
     );

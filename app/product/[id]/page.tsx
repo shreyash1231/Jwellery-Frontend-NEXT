@@ -37,6 +37,7 @@ export default function ProductDetail() {
 
     fetchProduct();
   }, [id]);
+  
 
   const categoryId = product?.categoryId?._id;
 
@@ -49,13 +50,28 @@ export default function ProductDetail() {
 if (!product || isCategoryLoading) {
   return <Loader />;
 }
+const handleBuyNow = () => {
+  const checkoutItem = [
+    {
+      productId: product._id,
+      name: product.name,
+      price: product.sellingPrice,
+      imageUrl: product.imageUrl?.[0],
+      quantity: 1,
+    },
+  ];
+
+  localStorage.setItem("checkoutItems", JSON.stringify(checkoutItem));
+
+  router.push("/checkout");
+};
 
   return (
   <div className="min-h-screen py-10">
     <div className="max-w-7xl mx-auto px-6 mb-6">
   <button
     onClick={() => router.push("/")}
-    className="flex items-center gap-2 text-gray-700 hover:text-black font-medium text-3xl"
+    className="flex items-center gap-2 text-[#555] hover:text-black font-medium text-xl"
   >
     ← Back to Home
   </button>
@@ -67,10 +83,10 @@ if (!product || isCategoryLoading) {
     >
 
       {/* LEFT IMAGE CARD */}
-      <div className="bg-white p-5 rounded-2xl shadow-md">
+      <div>
         <img
           src={`${IMAGE_BASE_URL}/${selectedImage}`}
-          className="w-full h-[540px] object-cover rounded-xl"
+          className="w-full md:h-[735px] lg:h-[675px] xl:h-[650px] object-cover rounded-xl"
         />
 
         {/* Thumbnails */}
@@ -89,18 +105,18 @@ if (!product || isCategoryLoading) {
       </div>
 
       {/* RIGHT CONTENT CARD */}
-      <div className="bg-white p-6 rounded-2xl shadow-md flex flex-col gap-5">
+      <div className="flex flex-col gap-5">
 
         {/* Title */}
         <h1 className="text-3xl font-semibold">
           {product.name} -{" "}
-          <span className="text-red-500">
+          <span className="text-[#c41e3a]">
             {product.categoryId?.name}
           </span>
         </h1>
 
         {/* Price */}
-        <div className="text-3xl text-red-500 font-bold">
+        <div className="text-3xl text-[#c41e3a] font-bold">
           Rs {product.sellingPrice}/-
         </div>
 
@@ -115,7 +131,7 @@ if (!product || isCategoryLoading) {
         </p>
 
         {/* Free Shipping */}
-        <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border">
+        <div className="flex items-center gap-3 p-3">
           <span>🚚</span>
           <div>
             <p className="font-semibold">Free Shipping On Orders</p>
@@ -188,7 +204,7 @@ if (!product || isCategoryLoading) {
         </div>
 
         {/* ADD TO CART */}
-        <button className="mt-6 bg-red-600 text-white py-3 rounded-xl text-lg font-semibold hover:bg-red-700 transition shadow">
+        <button     onClick={handleBuyNow} className="mt-6 bg-red-600 text-white py-3 rounded-xl text-lg font-semibold hover:bg-red-700 transition shadow">
           Add To Cart
         </button>
 

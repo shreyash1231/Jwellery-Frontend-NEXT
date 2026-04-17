@@ -19,6 +19,7 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { useCustomOrder } from "@/hooks/useCustomOrder";
+import { caramel } from "@/app/fonts";
 
 export default function Customcard() {
   const [type, setType] = useState("");
@@ -71,6 +72,9 @@ export default function Customcard() {
     );
   };
   return (
+    <div>    <h2 className={`${caramel.className} text-[50px] text-center text-[#b32126]`}>
+              Custom Orders
+            </h2>
     <div className="min-h-screen flex items-center justify-center p-6">
       <Card className="md:h-[500px] lg:h-[580px] xl:h-[620px] w-full max-w-5xl bg-[#fdf7e6] overflow-hidden p-0 shadow-xl rounded-3xl">
         
@@ -90,10 +94,6 @@ export default function Customcard() {
 
           {/* Form Section */}
            <div className="flex flex-col gap-5 p-6 md:p-10 w-full md:w-1/2 justify-center">
-
-            <h2 className="text-2xl md:text-3xl font-semibold">
-              Custom Orders
-            </h2>
 
             {/* Dropdown */}
              <div className="flex flex-col gap-2">
@@ -166,6 +166,7 @@ export default function Customcard() {
           </div>
         </div>
       </Card>
+    </div>
     </div>
   );
 }

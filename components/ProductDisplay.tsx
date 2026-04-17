@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { ProductDisplayProps } from "@/type/api";
 import { ProductCard } from "./ProductCard";
-import Link from "next/link";
+import { caramel } from "@/app/fonts";
+
 
 export default function ProductDisplay({
   title,
@@ -35,22 +36,22 @@ export default function ProductDisplay({
     <div className="mx-auto p-6 max-w-[2050px]">
       
       {/* HEADER */}
-      <div className="mb-6 flex flex-col">
-        <span className="text-center text-4xl italic">{title}</span>
-        <span className="text-center text-2xl italic">{subtitle}</span>
+      <div className="mb-6 flex flex-col text-center">
+        <span className={`text-[50px] ${caramel.className} text-[#b32126]`}>{title}</span>
+        <span className="text-[20px] text-[#555]">{subtitle}</span>
       </div>
 
       {/* PRODUCTS GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-fit mx-auto">
         {currentProducts.map((item) => (
-        <Link className="cursor-pointer" key={item._id} href={`/product/${item._id}`}>
           <ProductCard
             key={item._id}
             title={item.name}
             price={`Rs ${item.sellingPrice}/-`}
             image={`${process.env.NEXT_PUBLIC_IMAGE_BASE_URL}/${item.imageUrl[0]}`}
+            productData={item}
+            id={item._id}
           />
-        </Link>
         ))}
       </div>
 

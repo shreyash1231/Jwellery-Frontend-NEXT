@@ -1,23 +1,28 @@
-
-"use client"
-import Header from "@/components/Header";
 import "./globals.css";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
-import { Toaster } from "sonner";
+import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-export default function RootLayout({children,}: {children: React.ReactNode;}){
+import AnnouncementBar from "@/components/AnnouncementBar";
+import Providers from "./providers";
+import { AuthProvider } from "@/components/context/AuthContext";
+import Reels from "@/components/Reels";
 
-  const [queryClient] = useState(() => new QueryClient());
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
       <body className="bg-app min-h-screen flex flex-col">
-          <QueryClientProvider client={queryClient}>
-            <Header />
+        <Providers>
+          <AuthProvider>
+          <AnnouncementBar />
+          <Header />
           {children}
-          <Footer/>
-           <Toaster position="top-right" richColors />
-            </QueryClientProvider>
+          <Reels/>
+          <Footer />
+          </AuthProvider>
+        </Providers>
       </body>
     </html>
   );

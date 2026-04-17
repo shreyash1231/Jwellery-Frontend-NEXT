@@ -60,7 +60,7 @@ body {
 
 
 .bg-app {
-  background-image: url('/Images/slider.png');
+  background-image: linear-gradient(rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.45)),url("/Images/slider.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
