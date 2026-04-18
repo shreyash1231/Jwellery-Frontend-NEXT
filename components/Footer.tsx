@@ -194,7 +194,7 @@ const handleSubmit = () => {
 
   {/* Stamp Image */}
   <img
-    src="/images/rubber stamp 1.png"
+    src="/Images/rubber-stamp1.png"
     className="w-40 h-20 mt-2"
     alt="Stamp"
   />
