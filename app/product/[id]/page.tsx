@@ -7,11 +7,23 @@ import { API } from "@/service/dashboardService";
 import { useCategoriesProduct } from "@/hooks/useDashboard";
 import ProductDisplay from "@/components/ProductDisplay";
 import Footer from "@/components/Footer";
+import { useRef } from "react";
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_BASE_URL;
 
 export default function ProductDetail() {
   const { id } = useParams();
   const router = useRouter();
+
+  const imageRef = useRef<HTMLDivElement | null>(null);
+
+const [magnifier, setMagnifier] = useState({
+  show: false,
+  x: 0,
+  y: 0,
+});
+
+const ZOOM = 2.5;
+const LENS = 140;
 
   const [product, setProduct] = useState<any>(null);
   const [selectedImage, setSelectedImage] = useState<string>("");
@@ -38,7 +50,24 @@ export default function ProductDetail() {
     fetchProduct();
   }, [id]);
   
+const handleMouseMove = (e: React.MouseEvent) => {
+  if (!imageRef.current) return;
 
+  const rect = imageRef.current.getBoundingClientRect();
+
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  setMagnifier({
+    show: true,
+    x,
+    y,
+  });
+};
+
+const handleMouseLeave = () => {
+  setMagnifier((prev) => ({ ...prev, show: false }));
+};
   const categoryId = product?.categoryId?._id;
 
  const {
@@ -77,18 +106,50 @@ const handleBuyNow = () => {
   </button>
 </div>
     <div
-    className={`max-w-7xl mx-auto grid md:grid-cols-2 gap-10 px-6 ${
-        openSection ? "items-start" : "items-stretch"
-    }`}
-    >
+    className="max-w-7xl mx-auto grid md:grid-cols-2 gap-10 px-6 items-stretch">
 
       {/* LEFT IMAGE CARD */}
       <div>
-        <img
-          src={`${IMAGE_BASE_URL}/${selectedImage}`}
-          className="w-full md:h-[735px] lg:h-[675px] xl:h-[650px] object-cover rounded-xl"
-        />
+       <div
+          ref={imageRef}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+          className="relative w-full md:h-[735px] lg:h-[675px] xl:h-[625px] rounded-xl overflow-hidden"
+        >
+          {/* Main Image */}
+          <img
+            src={`${IMAGE_BASE_URL}/${selectedImage}`}
+            className="w-full h-full object-cover"
+          />
 
+          {magnifier.show && (
+          <div
+            style={{
+              position: "absolute",
+              width: `${LENS}px`,
+              height: `${LENS}px`,
+              borderRadius: "50%",
+              border: "3px solid white",
+              pointerEvents: "none",
+              left: magnifier.x - LENS / 2,
+              top: magnifier.y - LENS / 2,
+              backgroundImage: `url(${IMAGE_BASE_URL}/${selectedImage})`,
+              backgroundRepeat: "no-repeat",
+              backgroundSize: `${
+                imageRef.current?.clientWidth * ZOOM
+              }px ${
+                imageRef.current?.clientHeight * ZOOM
+              }px`,
+              backgroundPosition: `
+                -${magnifier.x * ZOOM - LENS / 2}px
+                -${magnifier.y * ZOOM - LENS / 2}px
+              `,
+              boxShadow: "0 8px 20px rgba(0,0,0,0.3)",
+              zIndex: 10,
+            }}
+          />
+        )}
+        </div>
         {/* Thumbnails */}
         <div className="flex gap-3 mt-3 overflow-x-auto whitespace-nowrap scrollbar-hide">
           {product.imageUrl.map((img: string, i: number) => (

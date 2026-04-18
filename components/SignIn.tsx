@@ -121,10 +121,9 @@ export default function SignIn() {
               >
                 New here? Sign up
               </Link>
+            </div>
                <span className="text-center">Or</span>
                <GoogleLoginButton/>
-            </div>
-
           </form>
         </div>
       </Card>

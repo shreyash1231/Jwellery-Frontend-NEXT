@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { API } from "@/service/dashboardService";
 
-const API = "https://render-jwellery-application-1.onrender.com"; // change if needed
 
 export default function CheckoutPage() {
   const [items, setItems] = useState<any[]>([]);

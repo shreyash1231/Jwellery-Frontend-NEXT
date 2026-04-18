@@ -43,7 +43,7 @@ export default function Category() {
                     ${isEven ? "md:order-1" : "md:order-2"}`}
                 >
                 <div
-                    className={`relative w-60 h-60 md:w-full md:h-80 overflow-hidden shadow-md
+                    className={`relative w-full h-60 md:w-full md:h-70 xl:h-80 overflow-hidden shadow-md
                     ${isEven ? "rounded-tr-[120px] rounded-br-[120px]" : "rounded-tl-[120px] rounded-bl-[120px]"}`}
                 >
                     <Image

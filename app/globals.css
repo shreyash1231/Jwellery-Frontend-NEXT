@@ -60,12 +60,33 @@ body {
 
 
 .bg-app {
-  background-image: linear-gradient(rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.45)),url("/Images/slider.png");
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.bg-app::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  background-image: linear-gradient(
+      rgba(255, 255, 255, 0.45),
+      rgba(255, 255, 255, 0.45)
+    ),
+    url("/Images/slider.png");
+
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-attachment: fixed; /* 🔥 this is key */
-  min-height: 100vh;
+
+  z-index: -1;
+
+  /* 🔥 fixes iOS blur / rendering issues */
+  transform: translateZ(0);
 }
 
 :root {

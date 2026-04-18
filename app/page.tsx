@@ -9,7 +9,9 @@ import Category from "@/components/Category";
 import { useBanners, useBestProducts } from "@/hooks/useDashboard";
 import Loader from "@/components/Loader";
 import { caramel } from "./fonts";
-
+import PopUp from "@/components/PopUp";
+import DulhanBanner from "@/components/DulhanBanner";
+import ShopTheLook from "@/components/ShopTheLook";
 export default function Home() {
 const { data: bannerData, isLoading: bannerLoading, isError: bannerError } = useBanners();
 const { data: productData, isLoading: productLoading, isError: productError } = useBestProducts();
@@ -29,6 +31,8 @@ if (isError) {
   );
 }
   return (
+      <>
+    <PopUp />  
     <div className="flex flex-col gap-12">
       {bannerData?.data?.map((banner: any) => (
         <div key={banner.id} className="relative w-full h-[90vh]">
@@ -45,7 +49,7 @@ if (isError) {
     Our <span className="italic"><span className={`${caramel.className} text-[35px] md:text-[50px] text-[#b32126]`}>Signature Collection</span></span>
   </span>
 
-  <div className="text-[15px] md:text-[20px] text-center text-[#555]">
+  <div className="flex flex-col text-[15px] md:text-[20px] text-center text-[#555]">
     <span>
       A curated line of handcrafted jewellery innovations, redefining how adornment is worn and experienced.
     </span>
@@ -126,6 +130,8 @@ if (isError) {
   <Link href="/categories">View All Products</Link>
   </Button>
 </div>
+<DulhanBanner/>
     </div>
+    </>
   );
 }
