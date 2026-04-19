@@ -1,157 +1,199 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import Image from "next/image";
 
-const looks = [
+interface Look {
+  id: number;
+  bigImage: string;
+  smallImage: string;
+  name: string;
+  mrp: string;
+  salePrice?: string;
+  discount?: string;
+  onSale: boolean;
+}
+
+const looks: Look[] = [
   {
-    mainImage: "/Images/Index7.png",
-    products: [
-      {
-        id: 1,
-        image: "/Images/Index7.png",
-        name: "Tanvi Green Meenakari Polki Jhumka",
-        mrp: 10500,
-        sellingPrice: 8400,
-        badge: "Sale",
-      },
-      {
-        id: 2,
-        image: "/Images/Index7.png",
-        name: "Kundan Bridal Necklace Set",
-        mrp: 15000,
-        sellingPrice: 12000,
-        badge: "Sale",
-      },
-    ],
-    // hotspots: clickable cart icons on the main image
-    hotspots: [
-      { top: "58%", left: "52%" },
-      { top: "78%", left: "60%" },
-    ],
+    id: 1,
+    bigImage: "/Images/shop-look-image-1.jpeg",
+    smallImage: "/Images/shop-look-image-1.jpeg",
+    name: "Tanvi Green Meenakari Polki Jhumka",
+    mrp: "₹10,500",
+    salePrice: "₹8,400",
+    discount: "Save 20%",
+    onSale: true,
   },
-  // add more looks here
+  {
+    id: 2,
+    bigImage: "/Images/shop-to-look-2.jpeg",
+    smallImage: "/Images/shop-to-look-2.jpeg",
+    name: "Kundan Maang Tikka with Pearl Drop",
+    mrp: "₹7,200",
+    salePrice: "₹6,000",
+    discount: "Save 17%",
+    onSale: true,
+  },
 ];
 
+function CartIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <path d="M16 10a4 4 0 01-8 0" />
+    </svg>
+  );
+}
+
+function ChevronLeft() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="15 18 9 12 15 6" />
+    </svg>
+  );
+}
+
+function ChevronRight() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  );
+}
+
 export default function ShopTheLook() {
-  const [currentLook, setCurrentLook] = useState(0);
-  const [activeProduct, setActiveProduct] = useState<number | null>(null);
+  const [current, setCurrent] = useState(0);
+  const [fading, setFading] = useState(false);
 
-  const look = looks[currentLook];
+  const goTo = useCallback(
+    (index: number) => {
+      if (fading) return;
+      setFading(true);
+      setTimeout(() => {
+        setCurrent((index + looks.length) % looks.length);
+        setFading(false);
+      }, 300);
+    },
+    [fading]
+  );
 
-  const prev = () => setCurrentLook((p) => (p - 1 + looks.length) % looks.length);
-  const next = () => setCurrentLook((p) => (p + 1) % looks.length);
+  const prev = () => goTo(current - 1);
+  const next = () => goTo(current + 1);
+
+  const look = looks[current];
+  const showControls = looks.length > 1;
+
+  const arrowClass =
+    "w-10 h-10 rounded-full border border-stone-300 bg-white flex items-center justify-center text-stone-600 hover:bg-stone-50 hover:border-stone-400 transition-all duration-200 shadow-sm disabled:opacity-30 disabled:cursor-not-allowed";
 
   return (
-    <section className="w-full bg-[#f9f6f0] py-16 px-6">
+    <section className="py-8 md:py-12 px-4 lg:min-h-screen flex flex-col items-center">
       {/* Heading */}
-      <h2 className="text-center text-xl font-semibold tracking-[0.3em] uppercase text-gray-800 mb-10">
-        Shop The Look
+      <h2 className="text-center tracking-[0.2em] text-2xl md:text-4xl font-medium text-stone-700 uppercase mb-6 md:mb-10">
+        Shop the Look
       </h2>
 
-      <div className="max-w-6xl mx-auto flex items-center gap-4">
+      {/* Outer row: side arrows on md+, images in center */}
+      <div className="flex items-center gap-4 w-full max-w-4xl">
 
-        {/* ← Prev arrow */}
+        {/* Prev — side arrow, md+ only */}
         <button
           onClick={prev}
-          className="w-9 h-9 flex-shrink-0 rounded-full border border-gray-400 flex items-center justify-center text-gray-600 hover:bg-white transition"
+          aria-label="Previous look"
+          disabled={!showControls}
+          className={`hidden md:flex flex-shrink-0 ${arrowClass}`}
         >
-          ‹
+          <ChevronLeft />
         </button>
 
-        {/* Main layout */}
-        <div className="flex flex-col md:flex-row gap-6 flex-1 items-start">
+        {/* Center column: images + mobile arrows */}
+        <div className="flex flex-col flex-1 gap-4">
 
-          {/* Main image with hotspots */}
-          <div className="relative w-full md:w-[58%] aspect-[3/4] rounded overflow-hidden flex-shrink-0">
-            <img
-              src={look.mainImage}
-              alt="Shop the look"
-              className="w-full h-full object-cover"
-            />
-
-            {/* Cart hotspot icons */}
-            {look.hotspots.map((hs, i) => (
+          {/* Images row */}
+          <div
+            className={`flex gap-3 md:gap-5 items-start transition-opacity duration-300 ${
+              fading ? "opacity-0" : "opacity-100"
+            }`}
+          >
+            {/* Big image */}
+            <div className="relative w-[65%] flex-shrink-0 rounded-md overflow-hidden">
+              <div className="relative aspect-[3/3] w-full">
+                <Image
+                  src={look.bigImage}
+                  alt={look.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 65vw, (max-width: 900px) 60vw, 520px"
+                  priority
+                />
+              </div>
               <button
-                key={i}
-                onClick={() => setActiveProduct(activeProduct === i ? null : i)}
-                style={{ top: hs.top, left: hs.left }}
-                className="absolute -translate-x-1/2 -translate-y-1/2 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md hover:scale-110 transition"
+                aria-label="Add to cart"
+                className="absolute bottom-3 right-3 w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/85 backdrop-blur-sm flex items-center justify-center text-stone-700 hover:bg-white transition-colors duration-200 shadow-sm"
               >
-                🛍️
+                <CartIcon />
               </button>
-            ))}
-          </div>
+            </div>
 
-          {/* Product cards on the right */}
-          <div className="flex flex-col gap-6 w-full md:w-[40%]">
-            {look.products.map((product, i) => {
-              const discount = Math.round(
-                ((product.mrp - product.sellingPrice) / product.mrp) * 100
-              );
-              return (
-                <div
-                  key={product.id}
-                  className={`cursor-pointer transition-all duration-200 ${
-                    activeProduct === i ? "ring-2 ring-gray-400 rounded" : ""
-                  }`}
-                  onClick={() => setActiveProduct(activeProduct === i ? null : i)}
-                >
-                  {/* Product image with Sale badge */}
-                  <div className="relative">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-52 object-cover rounded"
-                    />
-                    {product.badge && (
-                      <span className="absolute top-2 right-2 bg-gray-700 text-white text-xs px-2 py-0.5">
-                        {product.badge}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Product info */}
-                  <div className="mt-3 text-center">
-                    <p className="text-xs font-semibold tracking-widest uppercase text-gray-800">
-                      {product.name}
-                    </p>
-                    <div className="flex items-center justify-center gap-3 mt-1 text-sm">
-                      <span className="line-through text-gray-400">
-                        MRP ₹{product.mrp.toLocaleString("en-IN")}.00
-                      </span>
-                      <span className="text-gray-700">
-                        MRP ₹{product.sellingPrice.toLocaleString("en-IN")}.00
-                      </span>
-                      <span className="text-red-500 font-semibold">
-                        Save {discount}%
-                      </span>
-                    </div>
-                  </div>
+            {/* Small image */}
+            <div className="flex flex-col gap-3 flex-1">
+              <div className="relative rounded-md overflow-hidden">
+                <div className="relative aspect-[4/4] w-full">
+                  <Image
+                    src={look.smallImage}
+                    alt={look.name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 35vw, 260px"
+                  />
                 </div>
-              );
-            })}
+                {look.onSale && (
+                  <span className="absolute top-2 right-2 bg-stone-800 text-white text-[9px] md:text-[10px] font-medium px-1.5 md:px-2 py-0.5 tracking-widest uppercase">
+                    Sale
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
+
+          {/* Mobile arrows — below images, hidden on md+ */}
+          {showControls && (
+            <div className="flex md:hidden items-center justify-center gap-4">
+              <button onClick={prev} aria-label="Previous look" className={arrowClass}>
+                <ChevronLeft />
+              </button>
+              <button onClick={next} aria-label="Next look" className={arrowClass}>
+                <ChevronRight />
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* → Next arrow */}
+        {/* Next — side arrow, md+ only */}
         <button
           onClick={next}
-          className="w-9 h-9 flex-shrink-0 rounded-full border border-gray-400 flex items-center justify-center text-gray-600 hover:bg-white transition"
+          aria-label="Next look"
+          disabled={!showControls}
+          className={`hidden md:flex flex-shrink-0 ${arrowClass}`}
         >
-          ›
+          <ChevronRight />
         </button>
-
       </div>
 
-      {/* Dots */}
-      {looks.length > 1 && (
-        <div className="flex justify-center gap-2 mt-8">
+      {/* Dot indicators */}
+      {showControls && (
+        <div className="flex items-center gap-2 mt-5 md:mt-7">
           {looks.map((_, i) => (
             <button
               key={i}
-              onClick={() => setCurrentLook(i)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                i === currentLook ? "bg-gray-700 w-4" : "bg-gray-300"
+              onClick={() => goTo(i)}
+              aria-label={`Go to look ${i + 1}`}
+              className={`h-[6px] rounded-full transition-all duration-300 ${
+                i === current
+                  ? "w-5 bg-stone-800"
+                  : "w-[6px] bg-stone-300 hover:bg-stone-400"
               }`}
             />
           ))}

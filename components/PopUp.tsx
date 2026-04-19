@@ -190,7 +190,7 @@ export default function PopUp() {
         {/* Hero image */}
         <div className="relative h-[200px] w-full">
           <Image
-            src="/images/popupImage.jpeg"
+            src="/Images/popupImage.jpeg"
             alt="KuchalagIndia welcome"
             fill
             className="object-cover"

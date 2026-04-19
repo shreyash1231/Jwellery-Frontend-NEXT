@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCart, useCategories, useShopByProductFunction } from "@/hooks/useDashboard";
 import { ShoppingCart } from "lucide-react";
 import { useAuth } from "./context/AuthContext";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
 
 export default function Header() {
   const { isLoggedIn, setIsLoggedIn } = useAuth();
@@ -132,37 +133,50 @@ const selectedTotal = localCart
   return (
     <>
       {/* ── HEADER ─────────────────────────────────────────────────────────── */}
-      <header className="bg-[#c9b09a] sticky top-0 z-50 shadow-md">
-        <div className="max-w-8xl mx-auto py-2 flex items-center justify-between px-6">
-          <button
-            onClick={() => { setIsOpen(true); setShowCart(false); }}
-            className="text-2xl text-[#544120]"
-          >
-            ☰
-          </button>
+  <header className="bg-[#c9b09a] sticky top-0 z-50 shadow-md">
+  <div className="max-w-8xl mx-auto py-2 flex items-center justify-between px-6">
+    <button
+      onClick={() => { setIsOpen(true); setShowCart(false); }}
+      className="text-2xl text-[#544120]"
+    >
+      ☰
+    </button>
 
-          <div className="flex justify-center flex-1">
-            <img src="/Images/logo.png" className="w-18 h-15" alt="logo" />
-          </div>
+    <div className="flex justify-center flex-1">
+      <img src="/Images/logo.png" className="w-18 h-15" alt="logo" />
+    </div>
 
-         <div
-            className="relative cursor-pointer"
-            onClick={() => {
-              setShowCart(true);
-              setIsOpen(false);
-              refetchCart();
-            }}
-          >
-            <ShoppingCart className="w-6 h-6" />
+    <div className="flex items-center gap-4">
+      {/* Wishlist heart */}
+     <button
+      onClick={() => {
+        router.push("/wishlist");
+      }}
+      className="relative group"
+      aria-label="Wishlist"
+    >
+    <FaRegHeart size={22} className="text-black" />
+    </button>
 
-            {localCart.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs px-2 rounded-full">
-                {localCart.length}
-              </span>
-            )}
-          </div>
-        </div>
-      </header>
+      {/* Cart */}
+      <div
+        className="relative cursor-pointer"
+        onClick={() => {
+          setShowCart(true);
+          setIsOpen(false);
+          refetchCart();
+        }}
+      >
+        <ShoppingCart className="w-6 h-6" />
+        {localCart.length > 0 && (
+          <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs px-2 rounded-full">
+            {localCart.length}
+          </span>
+        )}
+      </div>
+    </div>
+  </div>
+</header>
 
       {/* ── SIDEBAR BACKDROP ───────────────────────────────────────────────── */}
       {isOpen && (

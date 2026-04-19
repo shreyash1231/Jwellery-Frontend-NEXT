@@ -130,6 +130,7 @@ if (isError) {
   <Link href="/categories">View All Products</Link>
   </Button>
 </div>
+<ShopTheLook/>
 <DulhanBanner/>
     </div>
     </>

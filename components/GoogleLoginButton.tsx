@@ -14,59 +14,70 @@ declare global {
 export default function GoogleLoginButton() {
   const buttonRef = useRef<HTMLDivElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const initializedRef = useRef(false); // ✅ track if initialize() was already called
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!buttonRef.current || !wrapperRef.current) return;
-
     let isMounted = true;
 
-    const initGoogle = () => {
-      if (!window.google?.accounts?.id || !isMounted) return;
+    const renderButton = () => {
+      if (!isMounted || !buttonRef.current || !wrapperRef.current) return;
+      if (!window.google?.accounts?.id) return;
 
-      buttonRef.current!.innerHTML = "";
-
-      // ── Read actual container width so button fills it ──
-      const containerWidth = wrapperRef.current?.offsetWidth ?? 300;
-      // Google's min is 200, max is 400
+      const containerWidth = wrapperRef.current.offsetWidth ?? 300;
       const buttonWidth = Math.min(Math.max(containerWidth, 200), 400);
 
-      window.google.accounts.id.initialize({
-        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
-        callback: async (res: any) => {
-          const idToken = res?.credential;
-          if (!idToken) { toast.error("Google login failed ❌"); return; }
-
-          try {
-            setLoading(true);
-            const response = await axios.post(`${API}/api/v1/user/google-login`, { idToken });
-            const data = response?.data;
-            localStorage.setItem("token", data?.data?.token);
-            localStorage.setItem("user", JSON.stringify(data?.data?.user));
-            toast.success("Google login successful ✅");
-            window.location.href = "/";
-          } catch (err: any) {
-            toast.error(err?.response?.data?.message || "Google login failed ❌");
-          } finally {
-            setLoading(false);
-          }
-        },
-        auto_select: false,
-        cancel_on_tap_outside: true,
-      });
+      buttonRef.current.innerHTML = "";
 
       window.google.accounts.id.renderButton(buttonRef.current, {
         theme: "outline",
         size: "large",
         shape: "pill",
         text: "continue_with",
-        width: buttonWidth, // ← dynamic width
+        width: buttonWidth,
       });
     };
 
-    // Re-render on resize so it stays fitted
-    const observer = new ResizeObserver(() => initGoogle());
-    if (wrapperRef.current) observer.observe(wrapperRef.current);
+    const initGoogle = () => {
+      if (!isMounted || !window.google?.accounts?.id) return;
+
+      // ✅ Only call initialize() once — never again on resize
+      if (!initializedRef.current) {
+        window.google.accounts.id.initialize({
+          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+          callback: async (res: any) => {
+            const idToken = res?.credential;
+            if (!idToken) { toast.error("Google login failed ❌"); return; }
+
+            try {
+              setLoading(true);
+              const response = await axios.post(`${API}/api/v1/user/google-login`, { idToken });
+              const data = response?.data;
+              localStorage.setItem("token", data?.data?.token);
+              localStorage.setItem("user", JSON.stringify(data?.data?.user));
+              toast.success("Google login successful ✅");
+              window.location.href = "/";
+            } catch (err: any) {
+              toast.error(err?.response?.data?.message || "Google login failed ❌");
+            } finally {
+              setLoading(false);
+            }
+          },
+          auto_select: false,
+          cancel_on_tap_outside: true,
+        });
+        initializedRef.current = true;
+      }
+
+      renderButton();
+    };
+
+    // ✅ ResizeObserver only re-renders the button, never re-initializes
+    const observer = new ResizeObserver(() => renderButton());
+
+    if (wrapperRef.current) {
+      observer.observe(wrapperRef.current);
+    }
 
     const existingScript = document.querySelector(
       'script[src="https://accounts.google.com/gsi/client"]'
@@ -91,7 +102,6 @@ export default function GoogleLoginButton() {
   }, []);
 
   return (
-    // wrapperRef measures the available width
     <div ref={wrapperRef} className="w-full mt-2">
       <div className="flex flex-col items-center gap-2">
         <div
