@@ -24,7 +24,7 @@ export default function RootLayout({
 
             {/* WhatsApp Floating Button */}
             <a
-              href="https://wa.me/919876543210"  // 👈 replace with your number
+              href="https://wa.me/9195822 84275"  // 👈 replace with your number
               target="_blank"
               rel="noopener noreferrer"
               title="Chat on WhatsApp"
