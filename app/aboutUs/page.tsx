@@ -33,7 +33,7 @@ export default function AboutUsPage() {
       </div>
 
       {/* Background Section */}
-      <div className="max-w-6xl mx-auto mt-10 px-4">
+      <div className="max-w-6xl mx-auto px-4">
         <div
           className="relative w-full rounded-2xl overflow-hidden min-h-[400px] flex items-center justify-center"
           style={{
@@ -48,11 +48,11 @@ export default function AboutUsPage() {
           <div className="absolute inset-0" />
 
           {/* Images */}
-          <div className="relative z-10 flex flex-col gap-6 items-center justify-center p-6">
+          <div className="relative z-10 flex flex-col md:gap-6 items-center justify-center p-6">
             
             {/* Top Image */}
             {topImage && (
-              <div className="w-64 md:w-150 rounded-xl overflow-hidden">
+              <div className="w-90 md:w-180 rounded-xl overflow-hidden">
                 <Image
                   src={`${IMAGE_BASE_URL}/${topImage}`}
                   alt="Top About Us"
@@ -65,7 +65,7 @@ export default function AboutUsPage() {
 
             {/* Bottom Image */}
             {bottomImage && (
-              <div className="w-64 md:w-150 rounded-xl overflow-hidden">
+              <div className="w-90 md:w-180 rounded-xl overflow-hidden">
                 <Image
                   src={`${IMAGE_BASE_URL}/${bottomImage}`}
                   alt="Bottom About Us"

@@ -88,7 +88,7 @@ const handleSubmit = () => {
               </Button>
 
             </div>
-            <div className="flex flex-col md:flex-row gap-8 md:gap-15 lg:gap-25 xl:gap-40 w-full justify-center">
+            <div className="flex flex-col md:flex-row gap-8 md:gap-15 lg:gap-25 xl:gap-40 w-full justify-center mt-20">
                 <div className="flex flex-col">
                     <span className=" text-[22px] font-bold">Occasion</span>
                    {categoryLoading ? (
