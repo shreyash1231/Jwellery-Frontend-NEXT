@@ -225,7 +225,7 @@ const selectedTotal = localCart
               />
               <Link
                 href={href}
-                className={`flex-1 pl-5 py-3 text-xl font-medium
+                className={`font-times flex-1 pl-5 py-3 text-xl font-medium
                 ${isActive ? "text-gray-900 font-semibold" : "text-black hover:text-blue-600"}`}
               >
                 {label}
@@ -240,7 +240,7 @@ const selectedTotal = localCart
               onClick={() => { setShowFunction(!showFunction); setShowProduct(false); }}
               className="flex items-center justify-between px-5 py-3 cursor-pointer"
             >
-              <span className="text-xl text-black">Shop by Function</span>
+              <span className="font-times text-xl text-black">Shop by Function</span>
               <span>{showFunction ? "−" : "+"}</span>
             </div>
             {showFunction && (
@@ -262,7 +262,7 @@ const selectedTotal = localCart
             onClick={() => { setShowProduct(!showProduct); setShowFunction(false); }}
             className="flex items-center justify-between px-5 py-3 cursor-pointer"
           >
-            <span className="text-xl text-black">Shop by Product</span>
+            <span className="font-times text-xl text-black">Shop by Product</span>
             <span>{showProduct ? "−" : "+"}</span>
           </div>
           {showProduct && (
@@ -297,7 +297,7 @@ const selectedTotal = localCart
               ) : (
                 <Link
                   href={href}
-                  className={`flex-1 pl-5 py-3 text-xl font-medium
+                  className={`font-times flex-1 pl-5 py-3 text-xl font-medium
                   ${isActive ? "text-gray-900 font-semibold" : "text-black hover:text-blue-600"}`}
                 >
                   {label}

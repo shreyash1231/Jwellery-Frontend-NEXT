@@ -1,4 +1,5 @@
 import { caramel } from "@/app/fonts";
+import Link from "next/link";
 
 export default function DulhanBanner() {
   return (
@@ -21,11 +22,13 @@ export default function DulhanBanner() {
 
       {/* RIGHT: Image */}
       <div className="w-full md:w-[58%] lg:w-[55%]">
-        <img
-          src="/Images/0f0b3050-43f2-400e-aea9-ab97b6e49093.jpg"
-          alt="Dulhan bridal jewellery"
-          className="w-full h-[500px] object-cover rounded-2xl"
-        />
+        <Link href="/categories/69ea0d4d1740086ad903b8fd">
+          <img
+            src="/Images/0f0b3050-43f2-400e-aea9-ab97b6e49093.jpg"
+            alt="Dulhan bridal jewellery"
+            className="w-full h-[500px] object-cover rounded-2xl"
+          />
+        </Link>
       </div>
 
     </section>

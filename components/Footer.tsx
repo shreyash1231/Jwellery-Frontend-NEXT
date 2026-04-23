@@ -76,7 +76,7 @@ const handleSubmit = () => {
                 placeholder="Enter your email"
                 className="md:w-full px-12 py-3 md:px-4 md:py-3 rounded-xl border border-gray-300 
                           focus:outline-none focus:ring-2 focus:ring-[#b32126] 
-                          text-sm sm:text-base bg-white border-black"
+                          text-sm sm:text-base bg-white border-black placeholder:text-[#555]"
               />
 
               <Button

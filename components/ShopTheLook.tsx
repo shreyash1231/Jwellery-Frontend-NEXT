@@ -5,6 +5,7 @@ import Image from "next/image";
 import axios from "axios";
 import { API } from "@/service/dashboardService";
 import { caramel } from "@/app/fonts";
+import Link from "next/link";
 
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_BASE_URL;
 
@@ -143,12 +144,14 @@ const imageLook = look;
                   playsInline
                 />
               </div>
-              <button
-                aria-label="Add to cart"
-                className="absolute bottom-3 right-3 w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/85 backdrop-blur-sm flex items-center justify-center text-stone-700 hover:bg-white transition-colors duration-200 shadow-sm"
-              >
-                <CartIcon />
-              </button>
+               <Link href="/categories/69ea0c521740086ad903b8da">
+                <button
+                  aria-label="Add to cart"
+                  className="absolute bottom-3 right-3 w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/85 backdrop-blur-sm flex items-center justify-center text-stone-700 hover:bg-white transition-colors duration-200 shadow-sm"
+                >
+                  <CartIcon />
+                </button>
+               </Link>
             </div>
 
             {/* ── SMALL: IMAGE ───────────────────────────────────────── */}
