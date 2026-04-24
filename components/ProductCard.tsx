@@ -10,9 +10,8 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API } from "@/service/dashboardService";
 
-
+// ── helpers ────────────────────────────────────────────────────────────────
 function getToken(): string | null {
-  // adjust key to wherever you store the JWT
   return (
     localStorage.getItem("token") ??
     sessionStorage.getItem("token") ??
@@ -35,7 +34,7 @@ function setGuestWishlist(ids: string[]) {
   localStorage.setItem(GUEST_KEY, JSON.stringify(ids));
 }
 
-// ── API calls ─────────────────────────────────────────────────────────────────
+// ── API calls ─────────────────────────────────────────────────────────────
 async function fetchWishlist(): Promise<string[]> {
   const token = getToken();
   if (!token) return [];
@@ -43,8 +42,8 @@ async function fetchWishlist(): Promise<string[]> {
   const res = await fetch(`${API}/api/v1/user/wishlist`, {
     headers: { Authorization: `Bearer ${token}` },
   });
+
   const json = await res.json();
-  // extract just the product IDs
   return (json?.data?.products ?? []).map((p: { _id: string }) => p._id);
 }
 
@@ -72,7 +71,7 @@ async function removeFromWishlistAPI(productId: string): Promise<void> {
   });
 }
 
-// ── component ─────────────────────────────────────────────────────────────────
+// ── component ─────────────────────────────────────────────────────────────
 export function ProductCard({
   title,
   price,
@@ -84,7 +83,7 @@ export function ProductCard({
   const queryClient = useQueryClient();
   const isLoggedIn = Boolean(getToken());
 
-  // ── server wishlist (logged-in users) ──────────────────────────────────────
+  // ── server wishlist ─────────────────────────────────────────────────────
   const { data: serverWishlistIds = [] } = useQuery<string[]>({
     queryKey: ["wishlist"],
     queryFn: fetchWishlist,
@@ -92,39 +91,85 @@ export function ProductCard({
     staleTime: 1000 * 60 * 5,
   });
 
-  // ── guest wishlist (localStorage) ─────────────────────────────────────────
+  // ── guest wishlist ──────────────────────────────────────────────────────
   const [guestIds, setGuestIds] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!isLoggedIn) setGuestIds(getGuestWishlist());
+    if (!isLoggedIn) {
+      setGuestIds(getGuestWishlist());
+    }
   }, [isLoggedIn]);
 
-  // derive whether THIS card is wishlisted
+  // ── derived state ───────────────────────────────────────────────────────
   const isWishlisted = isLoggedIn
     ? serverWishlistIds.includes(id)
     : guestIds.includes(id);
 
-  // ── mutations ─────────────────────────────────────────────────────────────
+  // ── ADD mutation (optimistic) ───────────────────────────────────────────
   const { mutate: addWishlist, isPending: addingWishlist } = useMutation({
     mutationFn: () => addToWishlistAPI(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["wishlist"] }),
+
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["wishlist"] });
+
+      const previous = queryClient.getQueryData<string[]>(["wishlist"]) || [];
+
+      // 🚀 optimistic add
+      queryClient.setQueryData<string[]>(["wishlist"], (old = []) =>
+        old.includes(id) ? old : [...old, id]
+      );
+
+      return { previous };
+    },
+
+    onError: (_err, _vars, context) => {
+      // rollback
+      queryClient.setQueryData(["wishlist"], context?.previous);
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["wishlist"] });
+    },
   });
 
+  // ── REMOVE mutation (optimistic) ────────────────────────────────────────
   const { mutate: removeWishlist, isPending: removingWishlist } = useMutation({
     mutationFn: () => removeFromWishlistAPI(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["wishlist"] }),
+
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["wishlist"] });
+
+      const previous = queryClient.getQueryData<string[]>(["wishlist"]) || [];
+
+      // 🚀 instant remove
+      queryClient.setQueryData<string[]>(["wishlist"], (old = []) =>
+        old.filter((pid) => pid !== id)
+      );
+
+      return { previous };
+    },
+
+    onError: (_err, _vars, context) => {
+      // rollback if failed
+      queryClient.setQueryData(["wishlist"], context?.previous);
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["wishlist"] });
+    },
   });
 
-  // ── heart click handler ───────────────────────────────────────────────────
+  // ── toggle handler ──────────────────────────────────────────────────────
   const handleWishlistToggle = () => {
     if (isLoggedIn) {
       isWishlisted ? removeWishlist() : addWishlist();
     } else {
-      // guest: toggle in localStorage
+      // guest toggle
       const current = getGuestWishlist();
       const updated = current.includes(id)
         ? current.filter((pid) => pid !== id)
         : [...current, id];
+
       setGuestWishlist(updated);
       setGuestIds(updated);
     }
@@ -134,7 +179,7 @@ export function ProductCard({
 
   return (
     <Card className="w-72 rounded-xl overflow-hidden shadow-md">
-      {/* Heart — top-right */}
+      {/* ❤️ Heart */}
       <div className="flex justify-end pr-[6px]">
         <button
           onClick={handleWishlistToggle}
@@ -159,12 +204,14 @@ export function ProductCard({
         />
       </Link>
 
+      {/* Content */}
       <div className="px-3 flex flex-col gap-3 pb-3">
         <span className="text-xl font-semibold">{title}</span>
         <hr className="border-black border" />
 
         <div className="flex items-center">
           <span className="text-xl font-bold">{price}</span>
+
           <Button
             onClick={() => addToCart({ productId: id, productData })}
             disabled={isPending}

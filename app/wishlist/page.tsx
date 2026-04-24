@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import ProductDisplay from "@/components/ProductDisplay";
 import { API } from "@/service/dashboardService";
@@ -14,10 +14,20 @@ interface WishlistProduct {
   quantity: number;
 }
 
+// ── helpers ─────────────────────────────────────────────
 function getToken(): string | null {
   return localStorage.getItem("token");
 }
 
+function getGuestWishlist(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem("guest_wishlist") ?? "[]");
+  } catch {
+    return [];
+  }
+}
+
+// ── API calls ───────────────────────────────────────────
 async function fetchWishlist(): Promise<WishlistProduct[]> {
   const token = getToken();
   if (!token) return [];
@@ -29,16 +39,64 @@ async function fetchWishlist(): Promise<WishlistProduct[]> {
   return response.data.data.products;
 }
 
+// 👉 fetch single product
+async function fetchProductById(id: string): Promise<WishlistProduct | null> {
+  try {
+    const res = await axios.get(`${API}/api/v1/user/get-product-by-id/${id}`);
+    return res.data.data;
+  } catch (err) {
+    console.error("Error fetching product:", id, err);
+    return null;
+  }
+}
+
+// ── component ───────────────────────────────────────────
 export default function Wishlist() {
   const [wishlist, setWishlist] = useState<WishlistProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchWishlist()
-      .then(setWishlist)
-      .finally(() => setLoading(false));
+    const loadWishlist = async () => {
+      const token = getToken();
+
+      try {
+        if (token) {
+          // ✅ Logged-in flow
+          const data = await fetchWishlist();
+          setWishlist(data);
+        } else {
+          // ✅ Guest flow
+          const ids = getGuestWishlist();
+
+          if (ids.length === 0) {
+            setWishlist([]);
+            return;
+          }
+
+          // 🔥 Fetch all products one-by-one
+          const results: WishlistProduct[] = [];
+
+          for (const id of ids) {
+            const product = await fetchProductById(id);
+            if (product) {
+              results.push(product);
+            }
+          }
+
+          setWishlist(results);
+        }
+      } catch (error) {
+        console.error("Wishlist error:", error);
+        setWishlist([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadWishlist();
   }, []);
 
+  // ── loading UI ─────────────────────────────────────────
   if (loading) {
     return (
       <div className="text-center py-16 text-gray-400">
@@ -47,6 +105,7 @@ export default function Wishlist() {
     );
   }
 
+  // ── render ─────────────────────────────────────────────
   return (
     <div>
       {wishlist.length > 0 ? (
