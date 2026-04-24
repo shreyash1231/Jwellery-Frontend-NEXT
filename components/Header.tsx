@@ -151,7 +151,7 @@ const selectedTotal = localCart
   return (
     <>
       {/* ── HEADER ─────────────────────────────────────────────────────────── */}
-<header className="bg-[#c9b09a] sticky top-0 z-50 shadow-md">
+<header className="bg-[#c9b09a] sticky top-0 z-50 shadow-md ">
   <div className="max-w-8xl mx-auto py-2 flex items-center justify-between px-6">
     
     {/* Left - equal width */}
@@ -225,7 +225,7 @@ const selectedTotal = localCart
               />
               <Link
                 href={href}
-                className={`font-times flex-1 pl-5 py-3 text-xl font-medium
+                className={`font-arial flex-1 pl-5 py-3 text-xl font-medium
                 ${isActive ? "text-gray-900 font-semibold" : "text-black hover:text-blue-600"}`}
               >
                 {label}
@@ -240,14 +240,14 @@ const selectedTotal = localCart
               onClick={() => { setShowFunction(!showFunction); setShowProduct(false); }}
               className="flex items-center justify-between px-5 py-3 cursor-pointer"
             >
-              <span className="font-times text-xl text-black">Shop by Function</span>
+              <span className="font-arial text-xl text-black">Shop by Function</span>
               <span>{showFunction ? "−" : "+"}</span>
             </div>
             {showFunction && (
               <div className="bg-[#eae3d8]">
                 {shopByFunctionCategories.map((item: any) => (
                   <Link key={item._id} href={`/categories/${item._id}`} onClick={() => setIsOpen(false)}>
-                    <div className="pl-10 py-2 text-black hover:text-blue-600 hover:bg-gray-100 transition border-b border-gray-300">
+                    <div className="font-arial pl-10 py-2 text-black hover:text-blue-600 hover:bg-gray-100 transition border-b border-gray-300">
                       {item.name}
                     </div>
                   </Link>
@@ -262,14 +262,14 @@ const selectedTotal = localCart
             onClick={() => { setShowProduct(!showProduct); setShowFunction(false); }}
             className="flex items-center justify-between px-5 py-3 cursor-pointer"
           >
-            <span className="font-times text-xl text-black">Shop by Product</span>
+            <span className="font-arial text-xl text-black">Shop by Product</span>
             <span>{showProduct ? "−" : "+"}</span>
           </div>
           {showProduct && (
             <div className="bg-[#eae3d8]">
               {productCategories.map((item: any) => (
                 <Link key={item._id} href={`/categories/${item._id}`} onClick={() => setIsOpen(false)}>
-                  <div className="pl-10 py-2 text-black hover:text-blue-600 hover:bg-gray-100 transition border-b border-gray-300">
+                  <div className="font-arial pl-10 py-2 text-black hover:text-blue-600 hover:bg-gray-100 transition border-b border-gray-300">
                     {item.name}
                   </div>
                 </Link>
@@ -297,7 +297,7 @@ const selectedTotal = localCart
               ) : (
                 <Link
                   href={href}
-                  className={`font-times flex-1 pl-5 py-3 text-xl font-medium
+                  className={`font-arial flex-1 pl-5 py-3 text-xl font-medium
                   ${isActive ? "text-gray-900 font-semibold" : "text-black hover:text-blue-600"}`}
                 >
                   {label}
