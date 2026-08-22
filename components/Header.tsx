@@ -13,7 +13,6 @@ export default function Header() {
   const [showFunction, setShowFunction] = useState(false);
   const [showProduct, setShowProduct] = useState(false);
   const [showCart, setShowCart] = useState(false);
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const router = useRouter();
   const pathname = usePathname();
   const { data, refetchCart } = useCart();
@@ -69,49 +68,23 @@ export default function Header() {
     });
   };
 
-  // ── Checkbox ──────────────────────────────────────────────────────────────
-  const handleCheckboxChange = (itemKey: string) => {
-    setSelectedItems((prev) => {
-      const next = new Set(prev);
-      next.has(itemKey) ? next.delete(itemKey) : next.add(itemKey);
-      return next;
-    });
-  };
-
 const handleRemove = (index: number) => {
-  setLocalCart((prev) => {
-    const item = prev[index];
-    const product = item.productId || item;
-    const itemKey = product._id || String(index);
-    // Clean up selectedItems too
-    setSelectedItems((sel) => {
-      const next = new Set(sel);
-      next.delete(itemKey);
-      return next;
-    });
-    return prev.filter((_, i) => i !== index);
-  });
+  setLocalCart((prev) => prev.filter((_, i) => i !== index));
 };
 const handleCheckout = () => {
-  const checkoutItems = localCart
-    .filter((item, index) => {
-      const product = item.productId || item;
-      const key = product._id || String(index);
-      return selectedItems.has(key);
-    })
-    .map((item) => {
-      const product = item.productId || item;
-      return {
-        productId: product._id,
-        name: product.name,
-        price: product.sellingPrice,
-        imageUrl: product.imageUrl?.[0],
-        quantity: item.quantity || 1,
-      };
-    });
+  const checkoutItems = localCart.map((item) => {
+    const product = item.productId || item;
+    return {
+      productId: product._id,
+      name: product.name,
+      price: product.sellingPrice,
+      imageUrl: product.imageUrl?.[0],
+      quantity: item.quantity || 1,
+    };
+  });
 
   if (checkoutItems.length === 0) {
-    alert("Please select at least one item to checkout.");
+    alert("Your cart is empty.");
     return;
   }
 
@@ -120,12 +93,7 @@ const handleCheckout = () => {
   router.push("/checkout");
 };
   // ── Total ─────────────────────────────────────────────────────────────────
-const selectedTotal = localCart
-  .filter((item, index) => {
-    const product = item.productId || item;
-    return selectedItems.has(product._id || String(index));
-  })
-  .reduce((sum, item) => {
+const selectedTotal = localCart.reduce((sum, item) => {
     const product = item.productId || item;
     return sum + (product.sellingPrice || 0) * (item.quantity || 1);
   }, 0);
@@ -332,26 +300,13 @@ const selectedTotal = localCart
           ) : (
             localCart.map((item: any, index: number) => {
               const product = item.productId || item;
-              const itemKey = product._id || String(index);
-              const isChecked = selectedItems.has(itemKey);
               const qty = item.quantity || 1;
 
               return (
                 <div
                   key={index}
-                  className={`flex gap-3 rounded-xl border p-3 transition-all duration-200
-                  ${isChecked ? "border-[#17587c] bg-blue-50" : "border-gray-200 bg-white"}`}
+                  className="flex gap-3 rounded-xl border border-gray-200 bg-white p-3 transition-all duration-200"
                 >
-                  {/* Checkbox */}
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => handleCheckboxChange(itemKey)}
-                      className="w-4 h-4 accent-[#17587c] cursor-pointer"
-                    />
-                  </div>
-
                   {/* Image */}
                   <img
                     src={`${process.env.NEXT_PUBLIC_IMAGE_BASE_URL}/${product.imageUrl?.[0]}`}
@@ -404,12 +359,12 @@ const selectedTotal = localCart
         {localCart.length > 0 && (
           <div className="shrink-0 border-t p-4 flex flex-col gap-3 bg-white">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">{selectedItems.size} item(s) selected</span>
+              <span className="text-gray-500">{localCart.length} item(s) in cart</span>
               <span className="font-bold text-gray-800">₹ {selectedTotal}</span>
             </div>
             <button
               onClick={handleCheckout}
-              disabled={selectedItems.size === 0}
+              disabled={localCart.length === 0}
               className="w-full bg-[#17587c] hover:bg-[#0f3f5a] text-white font-semibold
               rounded-xl py-3 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
