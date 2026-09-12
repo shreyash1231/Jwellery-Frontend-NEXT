@@ -6,6 +6,15 @@ import { useCart, useCategories, useShopByProductFunction } from "@/hooks/useDas
 import { ShoppingCart } from "lucide-react";
 import { useAuth } from "./context/AuthContext";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
+import { toast } from "sonner";
+import {
+  removeCartItemAPI,
+  removeCartItemLocal,
+  updateCartItemAPI,
+  updateCartItemLocal,
+} from "@/service/dashboardService";
+
+const getProductId = (item: any) => (item?.productId || item)?._id;
 
 export default function Header() {
   const { isLoggedIn, setIsLoggedIn } = useAuth();
@@ -47,29 +56,75 @@ export default function Header() {
     router.push("/signin");
   };
   // ── Quantity ──────────────────────────────────────────────────────────────
-  const handleIncrease = (index: number) => {
+  const handleIncrease = async (index: number) => {
+    const item = localCart[index];
+    const productId = getProductId(item);
+    const token = localStorage.getItem("token");
+
     setLocalCart((prev) =>
-      prev.map((item, i) =>
-        i === index ? { ...item, quantity: (item.quantity || 1) + 1 } : item
+      prev.map((it, i) =>
+        i === index ? { ...it, quantity: (it.quantity || 1) + 1 } : it
       )
     );
+
+    try {
+      if (token) {
+        await updateCartItemAPI(productId, "increase", token);
+      } else {
+        updateCartItemLocal(productId, "increase");
+      }
+      refetchCart();
+    } catch {
+      toast.error("Could not update quantity. Please try again.");
+      refetchCart();
+    }
   };
 
-  const handleDecrease = (index: number) => {
+  const handleDecrease = async (index: number) => {
+    const item = localCart[index];
+    const productId = getProductId(item);
+    const token = localStorage.getItem("token");
+    const willRemove = (item.quantity || 1) <= 1;
+
     setLocalCart((prev) => {
-      const item = prev[index];
-      if ((item.quantity || 1) <= 1) {
-        // Remove the item entirely
-        return prev.filter((_, i) => i !== index);
-      }
-      return prev.map((item, i) =>
-        i === index ? { ...item, quantity: item.quantity - 1 } : item
+      if (willRemove) return prev.filter((_, i) => i !== index);
+      return prev.map((it, i) =>
+        i === index ? { ...it, quantity: it.quantity - 1 } : it
       );
     });
+
+    try {
+      if (token) {
+        await updateCartItemAPI(productId, "decrease", token);
+      } else {
+        updateCartItemLocal(productId, "decrease");
+      }
+      refetchCart();
+    } catch {
+      toast.error("Could not update quantity. Please try again.");
+      refetchCart();
+    }
   };
 
-const handleRemove = (index: number) => {
+const handleRemove = async (index: number) => {
+  const item = localCart[index];
+  const productId = getProductId(item);
+  const token = localStorage.getItem("token");
+
   setLocalCart((prev) => prev.filter((_, i) => i !== index));
+
+  try {
+    if (token) {
+      await removeCartItemAPI(productId, token);
+    } else {
+      removeCartItemLocal(productId);
+    }
+    toast.success("Item removed from cart");
+    refetchCart();
+  } catch {
+    toast.error("Could not remove item. Please try again.");
+    refetchCart();
+  }
 };
 const handleCheckout = () => {
   const checkoutItems = localCart.map((item) => {

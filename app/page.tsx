@@ -96,6 +96,7 @@ export default function Home() {
                     alt="banner"
                     fill
                     priority
+                    sizes="100vw"
                     className="object-cover"
                   />
                 </div>

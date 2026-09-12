@@ -1,6 +1,7 @@
 import { addNewsletterApi, addToCartAPI, addToCartLocal, fetchAllProducts, fetchBanners, fetchBestProducts, fetchCartService, fetchCategories, fetchCategoriesProducts, fetchFooterDetails, fetchReels, fetchShopProductFunction, getAllContent, getProductsByCategory } from "@/service/dashboardService";
 import { ContentItem, Reel } from "@/type/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 
 // Banners
@@ -109,6 +110,8 @@ export const useReels = () => {
 };
 
 export const useAddToCart = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async ({
       productId,
@@ -124,6 +127,21 @@ export const useAddToCart = () => {
       } else {
         return addToCartLocal(productData, productId);
       }
+    },
+
+    onSuccess: (data: any) => {
+      if (data?.success === false) {
+        toast.info(data?.message || "Item is already in your cart");
+      } else {
+        toast.success("Added to cart");
+      }
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+    },
+
+    onError: (error: any) => {
+      toast.error(
+        error?.response?.data?.message || "Could not add item to cart. Please try again."
+      );
     },
   });
 };

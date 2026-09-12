@@ -56,6 +56,7 @@ export default function Category() {
                     src={`${process.env.NEXT_PUBLIC_IMAGE_BASE_URL}/${item.imageUrl}`}
                     alt={item.name}
                     fill
+                    sizes="(max-width: 768px) 100vw, 360px"
                     className="object-cover"
                     />
                 </div>

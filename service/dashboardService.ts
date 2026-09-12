@@ -1,7 +1,12 @@
 import { ContentItem } from "@/type/api";
 import axios from "axios";
 
-export const API = process.env.NEXT_PUBLIC_API_URL;
+const normalizeBaseUrl = (value?: string) => {
+  if (!value) return "http://localhost:5000";
+  return value.trim().replace(/\/+$/, "");
+};
+
+export const API = normalizeBaseUrl(process.env.NEXT_PUBLIC_API_URL);
 
 // Banners
 export const fetchBanners = async () => {
@@ -94,6 +99,61 @@ export const addToCartLocal = (productData: any, id: string) => {
 
   localStorage.setItem("cart", JSON.stringify(cart));
 
+  return cart;
+};
+
+export const updateCartItemAPI = async (
+  productId: string,
+  action: "increase" | "decrease",
+  token: string
+) => {
+  const res = await axios.patch(
+    `${API}/api/v1/user/cart/update`,
+    { productId, action },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return res.data;
+};
+
+export const removeCartItemAPI = async (productId: string, token: string) => {
+  const res = await axios.delete(`${API}/api/v1/user/cart/remove/${productId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return res.data;
+};
+
+export const updateCartItemLocal = (
+  productId: string,
+  action: "increase" | "decrease"
+) => {
+  let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+
+  cart = cart
+    .map((item: any) => {
+      if (item._id !== productId) return item;
+      const qty =
+        action === "increase" ? (item.quantity || 1) + 1 : (item.quantity || 1) - 1;
+      return { ...item, quantity: qty };
+    })
+    .filter((item: any) => (item.quantity || 1) > 0);
+
+  localStorage.setItem("cart", JSON.stringify(cart));
+
+  return cart;
+};
+
+export const removeCartItemLocal = (productId: string) => {
+  let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  cart = cart.filter((item: any) => item._id !== productId);
+  localStorage.setItem("cart", JSON.stringify(cart));
   return cart;
 };
 
