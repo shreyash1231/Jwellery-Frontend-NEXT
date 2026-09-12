@@ -73,10 +73,15 @@ export default function Header() {
       } else {
         updateCartItemLocal(productId, "increase");
       }
-      refetchCart();
+      // ✅ No refetchCart() here on success — localCart is already correct
+      // optimistically, and the backend mutation succeeded. Refetching here
+      // fires an overlapping GET /cart that can resolve out of order with
+      // other in-flight requests (e.g. from quick successive clicks) and
+      // clobber localCart with stale data — that was the "items reappear"
+      // glitch.
     } catch {
       toast.error("Could not update quantity. Please try again.");
-      refetchCart();
+      refetchCart(); // ✅ resync with server truth only when something failed
     }
   };
 
@@ -99,10 +104,10 @@ export default function Header() {
       } else {
         updateCartItemLocal(productId, "decrease");
       }
-      refetchCart();
+      // ✅ No refetchCart() here on success — see note in handleIncrease
     } catch {
       toast.error("Could not update quantity. Please try again.");
-      refetchCart();
+      refetchCart(); // ✅ resync with server truth only when something failed
     }
   };
 
@@ -120,10 +125,10 @@ const handleRemove = async (index: number) => {
       removeCartItemLocal(productId);
     }
     toast.success("Item removed from cart");
-    refetchCart();
+    // ✅ No refetchCart() here on success — see note in handleIncrease
   } catch {
     toast.error("Could not remove item. Please try again.");
-    refetchCart();
+    refetchCart(); // ✅ resync with server truth only when something failed
   }
 };
 const handleCheckout = () => {
