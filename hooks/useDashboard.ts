@@ -1,4 +1,4 @@
-import { addNewsletterApi, addToCartAPI, addToCartLocal, fetchAllProducts, fetchBanners, fetchBestProducts, fetchCartService, fetchCategories, fetchCategoriesProducts, fetchFooterDetails, fetchMarquee, fetchReels, fetchShopProductFunction, getAllContent, getProductsByCategory } from "@/service/dashboardService";
+import { addNewsletterApi, addToCartAPI, addToCartLocal, fetchAllProducts, fetchBanners, fetchBestProducts, fetchCartService, fetchCategories, fetchCategoriesProducts, fetchFooterDetails, fetchMarquee, fetchReels, fetchSiteSettings, fetchShopProductFunction, getAllContent, getProductsByCategory } from "@/service/dashboardService";
 import { ContentItem, Reel } from "@/type/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -119,6 +119,18 @@ export const useMarquee = () => {
     staleTime: 1000 * 60 * 5,
     retry: 1,
   });
+};
+
+// Admin switch (Site Settings) for the marquee, sub-category, discount badge and
+// coupon updates; false while loading so customers never see a half-switched page
+export const useNewFeatures = () => {
+  const { data } = useQuery({
+    queryKey: ["site-settings"],
+    queryFn: fetchSiteSettings,
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
+  return !!data?.newFeaturesEnabled;
 };
 
 export const useReels = () => {

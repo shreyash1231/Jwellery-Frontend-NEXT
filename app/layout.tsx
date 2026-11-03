@@ -2,6 +2,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AnnouncementBar from "@/components/AnnouncementBar";
+import TopBars from "@/components/TopBars";
 import Providers from "./providers";
 import { AuthProvider } from "@/components/context/AuthContext";
 import Reels from "@/components/Reels";
@@ -16,10 +17,10 @@ export default function RootLayout({
       <body className="bg-app min-h-screen flex flex-col">
         <Providers>
           <AuthProvider>
-            <div className="sticky top-0 z-50">
+            <TopBars>
               <AnnouncementBar />
               <Header />
-            </div>
+            </TopBars>
             {children}
             <Reels />
             <Footer />

@@ -1,9 +1,14 @@
 "use client";
 
-import { useMarquee } from "@/hooks/useDashboard";
+import { useMarquee, useNewFeatures } from "@/hooks/useDashboard";
+import ClassicAnnouncementBar from "./ClassicAnnouncementBar";
+
+export default function AnnouncementBar() {
+  return useNewFeatures() ? <MarqueeBar /> : <ClassicAnnouncementBar />;
+}
 
 // Text, colors and speed are managed from the admin panel (Top Marquee)
-export default function AnnouncementBar() {
+function MarqueeBar() {
   const { data: marquee } = useMarquee();
 
   const messages = (marquee?.messages || []).filter((m) => m.trim());

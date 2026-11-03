@@ -67,6 +67,16 @@ export type MarqueeSettings = {
   isActive: boolean;
 };
 
+export type SiteSettings = {
+  newFeaturesEnabled: boolean;
+};
+
+// Off unless the admin has switched it on, so a failed request shows the old site
+export const fetchSiteSettings = async (): Promise<SiteSettings> => {
+  const res = await axios.get(`${API}/api/v1/user/get-site-settings`);
+  return { newFeaturesEnabled: !!res.data?.data?.newFeaturesEnabled };
+};
+
 export const fetchMarquee = async (): Promise<MarqueeSettings | null> => {
   const res = await axios.get(`${API}/api/v1/user/get-marquee`);
   return res.data?.data ?? null;

@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import ProductDisplay from "@/components/ProductDisplay";
-import { useAllCategories, useProductsByCategory } from "@/hooks/useDashboard";
+import { useAllCategories, useNewFeatures, useProductsByCategory } from "@/hooks/useDashboard";
 import Category from "@/components/Category";
 import Loader from "@/components/Loader";
 import { caramel } from "@/app/fonts";
@@ -16,6 +16,7 @@ export default function CategoryPage() {
 
   const { data, isLoading } = useProductsByCategory(categoryId);
   const { categories, isLoading: categoriesLoading } = useAllCategories();
+  const newFeatures = useNewFeatures();
 
   if (isLoading || categoriesLoading) {
     return <Loader/>;
@@ -23,10 +24,13 @@ export default function CategoryPage() {
 
   const products = data?.data?.products || [];
   const category = categories.find((c: any) => c._id === categoryId);
-  const parent = categories.find((c: any) => c._id === getParentId(category));
-  const subCategories = categories.filter(
-    (c: any) => getParentId(c) === categoryId
-  );
+  // Old version: no breadcrumb and no sub-category tiles
+  const parent = newFeatures
+    ? categories.find((c: any) => c._id === getParentId(category))
+    : undefined;
+  const subCategories = newFeatures
+    ? categories.filter((c: any) => getParentId(c) === categoryId)
+    : [];
 
   const title = category?.name || products[0]?.categoryId?.name || "";
 

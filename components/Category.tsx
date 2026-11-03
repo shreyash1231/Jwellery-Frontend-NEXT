@@ -1,13 +1,14 @@
 "use client"
 
 import { caramel } from "@/app/fonts";
-import { useCategories } from "@/hooks/useDashboard";
+import { useCategories, useNewFeatures } from "@/hooks/useDashboard";
 import Image from "next/image";
 import Link from "next/link";
 import { isTopLevelCategory } from "@/lib/utils";
 
 export default function Category() {
   const { data: getdataCategory, isLoading } = useCategories();
+  const newFeatures = useNewFeatures();
 
   if (isLoading) {
     return (
@@ -17,7 +18,9 @@ export default function Category() {
     );
   }
 
-  const categories = (getdataCategory?.data || []).filter(isTopLevelCategory);
+  const categories = (getdataCategory?.data || []).filter(
+    (c: any) => !newFeatures || isTopLevelCategory(c)
+  );
 
   return (
     <div className="max-w-8xl mx-auto px-6 py-10 items-center">

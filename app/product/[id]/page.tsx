@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams,useRouter } from "next/navigation";
 import Loader from "@/components/Loader"
 import { API } from "@/service/dashboardService";
-import { useCategoriesProduct } from "@/hooks/useDashboard";
+import { useCategoriesProduct, useNewFeatures } from "@/hooks/useDashboard";
 import ProductDisplay from "@/components/ProductDisplay";
 import DiscountBadge, { getDiscountPercent } from "@/components/DiscountBadge";
 import Footer from "@/components/Footer";
@@ -30,6 +30,9 @@ const LENS = 140;
   const [selectedImage, setSelectedImage] = useState<string>("");
 
   const [openSection, setOpenSection] = useState<string | null>("");
+
+  const newFeatures = useNewFeatures();
+  const discountPercent = newFeatures ? getDiscountPercent(product) : 0;
 
   const toggleSection = (section: string) => {
     setOpenSection(openSection === section ? null : section);
@@ -182,16 +185,16 @@ const handleBuyNow = () => {
           <span className="text-3xl text-[#c41e3a] font-bold">
             Rs {product.sellingPrice.toLocaleString("en-IN")}/-
           </span>
-          {getDiscountPercent(product) > 0 && (
+          {discountPercent > 0 && (
             <>
               <span className="text-xl text-gray-500 line-through">
                 Rs {Number(product.mrp).toLocaleString("en-IN")}/-
               </span>
-              <DiscountBadge percent={getDiscountPercent(product)} className="text-sm" />
+              <DiscountBadge percent={discountPercent} className="text-sm" />
             </>
           )}
         </div>
-        {getDiscountPercent(product) > 0 && (
+        {discountPercent > 0 && (
           <p className="text-green-700 font-semibold text-sm -mt-2">
             You save Rs {(product.mrp - product.sellingPrice).toLocaleString("en-IN")}
           </p>

@@ -4,7 +4,7 @@ import { ProductCardProps } from "@/type/api";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import Link from "next/link";
-import { useAddToCart } from "@/hooks/useDashboard";
+import { useAddToCart, useNewFeatures } from "@/hooks/useDashboard";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -177,7 +177,8 @@ export function ProductCard({
   };
 
   const isHeartBusy = addingWishlist || removingWishlist;
-  const discountPercent = getDiscountPercent(productData);
+  const newFeatures = useNewFeatures();
+  const discountPercent = newFeatures ? getDiscountPercent(productData) : 0;
 
   return (
     <Card

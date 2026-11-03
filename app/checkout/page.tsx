@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { API, validateCouponApi } from "@/service/dashboardService";
+import { useNewFeatures } from "@/hooks/useDashboard";
 import { toast } from "sonner";
 import Confetti from "@/components/Confetti";
 
@@ -40,6 +41,11 @@ export default function CheckoutPage() {
   const [couponError, setCouponError] = useState("");
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [confettiKey, setConfettiKey] = useState(0);
+
+  const newFeatures = useNewFeatures();
+  // Old version reports coupon problems as toasts instead of under the box
+  const showCouponError = (msg: string) =>
+    newFeatures ? setCouponError(msg) : toast.error(msg);
 
   const [savedAddress, setSavedAddress] = useState<any>(null);
   const [addressId, setAddressId] = useState<string | null>(null);
@@ -152,20 +158,20 @@ export default function CheckoutPage() {
     setShowDropdown(false);
 
     if (!code) {
-      setCouponError("Please enter a coupon code.");
+      showCouponError("Please enter a coupon code.");
       return;
     }
     if (!/^[A-Z0-9]{3,20}$/.test(code)) {
-      setCouponError("Coupon codes have 3–20 letters or numbers, with no spaces or symbols.");
+      showCouponError("Coupon codes have 3–20 letters or numbers, with no spaces or symbols.");
       return;
     }
     if (subtotal <= 0) {
-      setCouponError("Your cart is empty.");
+      showCouponError("Your cart is empty.");
       return;
     }
     const token = localStorage.getItem("token");
     if (!token) {
-      setCouponError("Please log in to use coupons.");
+      showCouponError("Please log in to use coupons.");
       return;
     }
 
@@ -175,9 +181,10 @@ export default function CheckoutPage() {
       setDiscount(result.discount);
       setAppliedCoupon(result.coupon);
       setCouponCode(result.coupon.code);
-      setConfettiKey((k) => k + 1);
+      if (newFeatures) setConfettiKey((k) => k + 1);
+      else toast.success(`"${result.coupon.code}" applied! You save ₹${Number(result.discount).toFixed(2)}`);
     } catch (err: any) {
-      setCouponError(
+      showCouponError(
         err?.response?.data?.message || "Could not apply this coupon. Please try again."
       );
     } finally {
@@ -208,7 +215,7 @@ export default function CheckoutPage() {
       .catch((err: any) => {
         setAppliedCoupon(null);
         setDiscount(0);
-        setCouponError(
+        showCouponError(
           `"${code}" was removed: ${err?.response?.data?.message || "it no longer applies to this cart."}`
         );
       });
@@ -461,7 +468,7 @@ const openRazorpay = async (orderData: any) => {
   return (
     <>
 
-      <Confetti fireKey={confettiKey} />
+      {newFeatures && <Confetti fireKey={confettiKey} />}
 
       <div className="min-h-screen p-6 arial-font">
         <div className="max-w-7xl mx-auto px-6 mb-6">
@@ -555,15 +562,23 @@ const openRazorpay = async (orderData: any) => {
                         }}
                         maxLength={20}
                         aria-invalid={!!couponError}
-                        className={`border p-2 w-20 rounded-lg flex-1 uppercase tracking-wide ${
-                          couponError ? "border-red-500 coupon-shake" : ""
-                        } ${appliedCoupon ? "border-green-500 bg-green-50 text-green-800 font-semibold" : ""}`}
+                        className={
+                          newFeatures
+                            ? `border p-2 w-20 rounded-lg flex-1 uppercase tracking-wide ${
+                                couponError ? "border-red-500 coupon-shake" : ""
+                              } ${appliedCoupon ? "border-green-500 bg-green-50 text-green-800 font-semibold" : ""}`
+                            : "border p-2 w-20 rounded-lg flex-1"
+                        }
                         disabled={!!appliedCoupon || applyingCoupon}
                       />
                       {appliedCoupon ? (
-                        <span className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold flex items-center gap-1">
-                          ✓ Applied
-                        </span>
+                        newFeatures ? (
+                          <span className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold flex items-center gap-1">
+                            ✓ Applied
+                          </span>
+                        ) : (
+                          <button onClick={removeCoupon} className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium">Remove</button>
+                        )
                       ) : (
                         <button
                           onClick={() => applyCoupon(couponCode)}
@@ -594,11 +609,13 @@ const openRazorpay = async (orderData: any) => {
                               <span className="font-semibold text-sm">{coupon.code}</span>
                               <span className="text-green-600 text-sm font-medium">
                                 {coupon.type === "PERCENT"
-                                  ? `${coupon.value}% OFF${coupon.maxDiscount ? ` (up to ₹${coupon.maxDiscount})` : ""}`
+                                  ? `${coupon.value}% OFF${newFeatures && coupon.maxDiscount ? ` (up to ₹${coupon.maxDiscount})` : ""}`
                                   : `₹${coupon.value} OFF`}
                               </span>
                             </div>
-                            {shortBy > 0 ? (
+                            {!newFeatures ? (
+                              <p className="text-xs text-gray-400 mt-0.5">Min order ₹{coupon.minOrderValue}</p>
+                            ) : shortBy > 0 ? (
                               <p className="text-xs text-amber-600 mt-0.5">
                                 Add ₹{shortBy.toLocaleString("en-IN")} more to unlock
                               </p>
@@ -619,7 +636,13 @@ const openRazorpay = async (orderData: any) => {
                   </p>
                 )}
 
-                {appliedCoupon && (
+                {appliedCoupon && !newFeatures && (
+                  <p className="text-green-600 text-xs mt-1">
+                    ✅ "{appliedCoupon.code}" applied — you save ₹{discount.toFixed(2)}
+                  </p>
+                )}
+
+                {appliedCoupon && newFeatures && (
                   <div
                     key={confettiKey}
                     className="coupon-pop mt-3 flex items-center gap-3 rounded-xl border-2 border-dashed border-green-500 bg-gradient-to-r from-green-50 via-emerald-50 to-amber-50 p-3"
