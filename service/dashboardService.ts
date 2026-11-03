@@ -59,6 +59,28 @@ export const getProductsByCategory = async (categoryId: string) => {
   return res.data;
 };
 
+export type MarqueeSettings = {
+  messages: string[];
+  textColor: string;
+  backgroundColor: string;
+  speed: number;
+  isActive: boolean;
+};
+
+export const fetchMarquee = async (): Promise<MarqueeSettings | null> => {
+  const res = await axios.get(`${API}/api/v1/user/get-marquee`);
+  return res.data?.data ?? null;
+};
+
+export const validateCouponApi = async (code: string, amount: number, token: string) => {
+  const res = await axios.post(
+    `${API}/api/v1/user/validate-coupon`,
+    { code, amount },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return res.data?.data as { discount: number; finalAmount: number; coupon: any };
+};
+
 export const fetchReels = async () => {
   const res = await axios.get(`${API}/api/v1/user/get-all-reels`);
   return res.data?.data || []; 

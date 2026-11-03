@@ -16,8 +16,10 @@ export default function RootLayout({
       <body className="bg-app min-h-screen flex flex-col">
         <Providers>
           <AuthProvider>
-            <AnnouncementBar />
-            <Header />
+            <div className="sticky top-0 z-50">
+              <AnnouncementBar />
+              <Header />
+            </div>
             {children}
             <Reels />
             <Footer />

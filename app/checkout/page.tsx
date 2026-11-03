@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { API } from "@/service/dashboardService";
+import { API, validateCouponApi } from "@/service/dashboardService";
 import { toast } from "sonner";
+import Confetti from "@/components/Confetti";
 
 // ── Razorpay type declaration ─────────────────────────────────────────────────
 declare global {
@@ -36,6 +37,9 @@ export default function CheckoutPage() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [discount, setDiscount] = useState(0);
+  const [couponError, setCouponError] = useState("");
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [confettiKey, setConfettiKey] = useState(0);
 
   const [savedAddress, setSavedAddress] = useState<any>(null);
   const [addressId, setAddressId] = useState<string | null>(null);
@@ -140,28 +144,76 @@ export default function CheckoutPage() {
     });
   };
 
-  const applyCoupon = (coupon: any) => {
-    if (subtotal < coupon.minOrderValue) {
-      toast.error(`Min. order ₹${coupon.minOrderValue} required for this coupon.`);
+  // The backend is the source of truth: it checks active/expiry/usage/min order/
+  // per-user limits and returns the exact discount the order will get
+  const applyCoupon = async (rawCode: string) => {
+    const code = rawCode.trim().toUpperCase();
+    setCouponError("");
+    setShowDropdown(false);
+
+    if (!code) {
+      setCouponError("Please enter a coupon code.");
       return;
     }
-    const discountAmount =
-      coupon.type === "PERCENT"
-        ? (subtotal * coupon.value) / 100
-        : coupon.value;
-    setDiscount(discountAmount);
-    setAppliedCoupon(coupon);
-    setCouponCode(coupon.code);
-    setShowDropdown(false);
-    toast.success(`"${coupon.code}" applied! You save ₹${discountAmount.toFixed(2)}`);
+    if (!/^[A-Z0-9]{3,20}$/.test(code)) {
+      setCouponError("Coupon codes have 3–20 letters or numbers, with no spaces or symbols.");
+      return;
+    }
+    if (subtotal <= 0) {
+      setCouponError("Your cart is empty.");
+      return;
+    }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setCouponError("Please log in to use coupons.");
+      return;
+    }
+
+    setApplyingCoupon(true);
+    try {
+      const result = await validateCouponApi(code, subtotal, token);
+      setDiscount(result.discount);
+      setAppliedCoupon(result.coupon);
+      setCouponCode(result.coupon.code);
+      setConfettiKey((k) => k + 1);
+    } catch (err: any) {
+      setCouponError(
+        err?.response?.data?.message || "Could not apply this coupon. Please try again."
+      );
+    } finally {
+      setApplyingCoupon(false);
+    }
   };
 
   const removeCoupon = () => {
     setAppliedCoupon(null);
     setDiscount(0);
     setCouponCode("");
+    setCouponError("");
     toast("Coupon removed.", { icon: "🗑️" });
   };
+
+  // Quantities changed: re-check the applied coupon against the new subtotal
+  useEffect(() => {
+    if (!appliedCoupon) return;
+    const token = localStorage.getItem("token");
+    const code = appliedCoupon.code;
+    if (!token || subtotal <= 0) {
+      setAppliedCoupon(null);
+      setDiscount(0);
+      return;
+    }
+    validateCouponApi(code, subtotal, token)
+      .then((result) => setDiscount(result.discount))
+      .catch((err: any) => {
+        setAppliedCoupon(null);
+        setDiscount(0);
+        setCouponError(
+          `"${code}" was removed: ${err?.response?.data?.message || "it no longer applies to this cart."}`
+        );
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subtotal]);
 
   // ─── Open Razorpay ────────────────────────────────────────────────────────
   // `orderData` is the object inside res.data.data from your order/create API.
@@ -320,7 +372,7 @@ const openRazorpay = async (orderData: any) => {
           addressId:resolvedAddressId,
           currency: "INR",
         };
-        if (couponCode) payload.couponCode = couponCode;
+        if (appliedCoupon) payload.couponCode = appliedCoupon.code;
 
         const res = await axios.post(
           `${API}/api/v1/user/order/create`,
@@ -350,7 +402,7 @@ const openRazorpay = async (orderData: any) => {
           guestContact: { email: form.email },
           currency: "INR",
         };
-        if (couponCode) payload.couponCode = couponCode;
+        if (appliedCoupon) payload.couponCode = appliedCoupon.code;
 
         const res = await axios.post(`${API}/api/v1/user/order/create`, payload);
         orderData = res.data?.data;
@@ -408,6 +460,8 @@ const openRazorpay = async (orderData: any) => {
   // ─── UI ───────────────────────────────────────────────────────────────────
   return (
     <>
+
+      <Confetti fireKey={confettiKey} />
 
       <div className="min-h-screen p-6 arial-font">
         <div className="max-w-7xl mx-auto px-6 mb-6">
@@ -489,23 +543,34 @@ const openRazorpay = async (orderData: any) => {
                       <input
                         placeholder="Discount code"
                         value={couponCode}
-                        onChange={(e) => { setCouponCode(e.target.value); setShowDropdown(true); }}
+                        onChange={(e) => {
+                          setCouponCode(e.target.value.toUpperCase().replace(/\s/g, ""));
+                          setCouponError("");
+                          setShowDropdown(true);
+                        }}
                         onFocus={() => setShowDropdown(true)}
-                        className="border p-2 w-20 rounded-lg flex-1"
-                        disabled={!!appliedCoupon}
+                        onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !appliedCoupon && !applyingCoupon) applyCoupon(couponCode);
+                        }}
+                        maxLength={20}
+                        aria-invalid={!!couponError}
+                        className={`border p-2 w-20 rounded-lg flex-1 uppercase tracking-wide ${
+                          couponError ? "border-red-500 coupon-shake" : ""
+                        } ${appliedCoupon ? "border-green-500 bg-green-50 text-green-800 font-semibold" : ""}`}
+                        disabled={!!appliedCoupon || applyingCoupon}
                       />
                       {appliedCoupon ? (
-                        <button onClick={removeCoupon} className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium">Remove</button>
+                        <span className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold flex items-center gap-1">
+                          ✓ Applied
+                        </span>
                       ) : (
                         <button
-                          onClick={() => {
-                            const found = coupons.find((c) => c.code === couponCode);
-                            if (found) applyCoupon(found);
-                            else toast.error("Invalid coupon code.");
-                          }}
-                          className="px-3 py-2 bg-red-700 text-white rounded-lg text-sm font-medium"
+                          onClick={() => applyCoupon(couponCode)}
+                          disabled={applyingCoupon}
+                          className="px-3 py-2 bg-red-700 text-white rounded-lg text-sm font-medium disabled:opacity-60 min-w-[76px]"
                         >
-                          Apply
+                          {applyingCoupon ? "Checking…" : "Apply"}
                         </button>
                       )}
                     </>
@@ -516,24 +581,66 @@ const openRazorpay = async (orderData: any) => {
                   <div className="absolute z-10 w-full bg-white border rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
                     {coupons
                       .filter((c) => c.code.toLowerCase().includes(couponCode.toLowerCase()))
-                      .map((coupon) => (
-                        <div key={coupon.id} onClick={() => applyCoupon(coupon)} className="p-1 md:p-3 hover:bg-gray-50 cursor-pointer border-b last:border-0">
-                          <div className="flex justify-between items-center">
-                            <span className="font-semibold text-sm">{coupon.code}</span>
-                            <span className="text-green-600 text-sm font-medium">
-                              {coupon.type === "PERCENT" ? `${coupon.value}% OFF` : `₹${coupon.value} OFF`}
-                            </span>
+                      .map((coupon) => {
+                        const shortBy = (coupon.minOrderValue || 0) - subtotal;
+                        return (
+                          <div
+                            key={coupon.id}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => applyCoupon(coupon.code)}
+                            className="p-1 md:p-3 hover:bg-gray-50 cursor-pointer border-b last:border-0"
+                          >
+                            <div className="flex justify-between items-center">
+                              <span className="font-semibold text-sm">{coupon.code}</span>
+                              <span className="text-green-600 text-sm font-medium">
+                                {coupon.type === "PERCENT"
+                                  ? `${coupon.value}% OFF${coupon.maxDiscount ? ` (up to ₹${coupon.maxDiscount})` : ""}`
+                                  : `₹${coupon.value} OFF`}
+                              </span>
+                            </div>
+                            {shortBy > 0 ? (
+                              <p className="text-xs text-amber-600 mt-0.5">
+                                Add ₹{shortBy.toLocaleString("en-IN")} more to unlock
+                              </p>
+                            ) : (
+                              <p className="text-xs text-gray-400 mt-0.5">
+                                {coupon.minOrderValue ? `Min order ₹${coupon.minOrderValue}` : "No minimum order"}
+                              </p>
+                            )}
                           </div>
-                          <p className="text-xs text-gray-400 mt-0.5">Min order ₹{coupon.minOrderValue}</p>
-                        </div>
-                      ))}
+                        );
+                      })}
                   </div>
                 )}
 
-                {appliedCoupon && (
-                  <p className="text-green-600 text-xs mt-1">
-                    ✅ "{appliedCoupon.code}" applied — you save ₹{discount.toFixed(2)}
+                {couponError && !appliedCoupon && (
+                  <p role="alert" className="text-red-600 text-xs mt-1.5">
+                    {couponError}
                   </p>
+                )}
+
+                {appliedCoupon && (
+                  <div
+                    key={confettiKey}
+                    className="coupon-pop mt-3 flex items-center gap-3 rounded-xl border-2 border-dashed border-green-500 bg-gradient-to-r from-green-50 via-emerald-50 to-amber-50 p-3"
+                  >
+                    <span className="text-3xl" aria-hidden>🎉</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-green-700 font-extrabold tracking-widest text-sm">
+                        COUPON APPLIED!
+                      </p>
+                      <p className="text-sm text-gray-700">
+                        <span className="font-semibold">{appliedCoupon.code}</span> — you saved{" "}
+                        <span className="font-bold text-green-700">₹{discount.toLocaleString("en-IN")}</span>
+                      </p>
+                    </div>
+                    <button
+                      onClick={removeCoupon}
+                      className="text-xs text-gray-500 underline hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 )}
               </div>
             )}

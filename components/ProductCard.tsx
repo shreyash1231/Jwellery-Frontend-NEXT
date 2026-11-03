@@ -9,6 +9,7 @@ import { FaHeart, FaRegHeart } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API } from "@/service/dashboardService";
+import DiscountBadge, { getDiscountPercent } from "./DiscountBadge";
 
 // ── helpers ────────────────────────────────────────────────────────────────
 function getToken(): string | null {
@@ -176,9 +177,14 @@ export function ProductCard({
   };
 
   const isHeartBusy = addingWishlist || removingWishlist;
+  const discountPercent = getDiscountPercent(productData);
 
   return (
-    <Card className="w-72 rounded-xl overflow-hidden shadow-md">
+    <Card
+      className={`w-72 rounded-xl overflow-hidden shadow-md ${
+        discountPercent ? "ring-2 ring-[#c9a227]/70" : ""
+      }`}
+    >
       {/* ❤️ Heart */}
       <div className="flex justify-end pr-[6px]">
         <button
@@ -196,12 +202,13 @@ export function ProductCard({
       </div>
 
       {/* Image */}
-      <Link href={`/product/${id}`}>
+      <Link href={`/product/${id}`} className="relative block">
         <img
           src={image}
           alt={title}
           className="w-full h-64 object-cover cursor-pointer"
         />
+        <DiscountBadge percent={discountPercent} className="absolute top-3 left-3" />
       </Link>
 
       {/* Content */}
@@ -210,7 +217,14 @@ export function ProductCard({
         <hr className="border-black border" />
 
         <div className="flex items-center">
-          <span className="text-xl font-bold">{price}</span>
+          <div className="flex flex-col leading-tight">
+            <span className="text-xl font-bold">{price}</span>
+            {discountPercent > 0 && (
+              <span className="text-sm text-gray-500 line-through">
+                Rs {Number(productData.mrp).toLocaleString("en-IN")}/-
+              </span>
+            )}
+          </div>
 
           <Button
             onClick={() => addToCart({ productId: id, productData })}

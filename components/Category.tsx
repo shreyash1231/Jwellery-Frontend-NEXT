@@ -4,6 +4,7 @@ import { caramel } from "@/app/fonts";
 import { useCategories } from "@/hooks/useDashboard";
 import Image from "next/image";
 import Link from "next/link";
+import { isTopLevelCategory } from "@/lib/utils";
 
 export default function Category() {
   const { data: getdataCategory, isLoading } = useCategories();
@@ -16,7 +17,7 @@ export default function Category() {
     );
   }
 
-  const categories = getdataCategory?.data || [];
+  const categories = (getdataCategory?.data || []).filter(isTopLevelCategory);
 
   return (
     <div className="max-w-8xl mx-auto px-6 py-10 items-center">

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCart, useCategories, useShopByProductFunction } from "@/hooks/useDashboard";
 import { ShoppingCart } from "lucide-react";
+import { isTopLevelCategory } from "@/lib/utils";
 import { useAuth } from "./context/AuthContext";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 import { toast } from "sonner";
@@ -31,8 +32,9 @@ export default function Header() {
   const { data: getdataCategory } = useCategories();
   const { data: getdataProductCategory } = useShopByProductFunction();
 
-  const categories = getdataCategory?.data || [];
-  const productCategories = getdataProductCategory?.data || [];
+  // Sub-categories are reached from their parent's page, not the menus
+  const categories = (getdataCategory?.data || []).filter(isTopLevelCategory);
+  const productCategories = (getdataProductCategory?.data || []).filter(isTopLevelCategory);
 
   const shopByFunctionCategories = categories.filter(
     (item: any) => item?.isShopByFunction === true

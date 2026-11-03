@@ -6,6 +6,7 @@ import Loader from "@/components/Loader"
 import { API } from "@/service/dashboardService";
 import { useCategoriesProduct } from "@/hooks/useDashboard";
 import ProductDisplay from "@/components/ProductDisplay";
+import DiscountBadge, { getDiscountPercent } from "@/components/DiscountBadge";
 import Footer from "@/components/Footer";
 import { useRef } from "react";
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_BASE_URL;
@@ -177,9 +178,24 @@ const handleBuyNow = () => {
         </h1>
 
         {/* Price */}
-        <div className="text-3xl text-[#c41e3a] font-bold">
-          Rs {product.sellingPrice.toLocaleString("en-IN")}/-
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-3xl text-[#c41e3a] font-bold">
+            Rs {product.sellingPrice.toLocaleString("en-IN")}/-
+          </span>
+          {getDiscountPercent(product) > 0 && (
+            <>
+              <span className="text-xl text-gray-500 line-through">
+                Rs {Number(product.mrp).toLocaleString("en-IN")}/-
+              </span>
+              <DiscountBadge percent={getDiscountPercent(product)} className="text-sm" />
+            </>
+          )}
         </div>
+        {getDiscountPercent(product) > 0 && (
+          <p className="text-green-700 font-semibold text-sm -mt-2">
+            You save Rs {(product.mrp - product.sellingPrice).toLocaleString("en-IN")}
+          </p>
+        )}
 
         {/* Tax */}
         <p className="text-[#555] font-semibold text-sm">

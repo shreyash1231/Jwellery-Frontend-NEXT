@@ -1,4 +1,4 @@
-import { addNewsletterApi, addToCartAPI, addToCartLocal, fetchAllProducts, fetchBanners, fetchBestProducts, fetchCartService, fetchCategories, fetchCategoriesProducts, fetchFooterDetails, fetchReels, fetchShopProductFunction, getAllContent, getProductsByCategory } from "@/service/dashboardService";
+import { addNewsletterApi, addToCartAPI, addToCartLocal, fetchAllProducts, fetchBanners, fetchBestProducts, fetchCartService, fetchCategories, fetchCategoriesProducts, fetchFooterDetails, fetchMarquee, fetchReels, fetchShopProductFunction, getAllContent, getProductsByCategory } from "@/service/dashboardService";
 import { ContentItem, Reel } from "@/type/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -77,6 +77,19 @@ export const useShopByProductFunction = () => {
   });
 };
 
+// Both category lists merged, so parent/child lookups work across them
+export const useAllCategories = () => {
+  const { data: funcData, isLoading: funcLoading } = useCategories();
+  const { data: prodData, isLoading: prodLoading } = useShopByProductFunction();
+
+  const byId = new Map<string, any>();
+  [...(funcData?.data || []), ...(prodData?.data || [])].forEach((c: any) =>
+    byId.set(c._id, c)
+  );
+
+  return { categories: [...byId.values()], isLoading: funcLoading || prodLoading };
+};
+
 export const useProductsByCategory = (categoryId: string) => {
   return useQuery({
     queryKey: ["products", categoryId],
@@ -96,6 +109,15 @@ export const useNewsletter = () => {
     onError: (error: any) => {
       console.error("Error:", error?.response?.data || error.message);
     },
+  });
+};
+
+export const useMarquee = () => {
+  return useQuery({
+    queryKey: ["marquee"],
+    queryFn: fetchMarquee,
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
   });
 };
 
