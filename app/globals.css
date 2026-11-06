@@ -244,3 +244,37 @@ body {
     animation: none;
   }
 }
+
+/* ── Collection product cards ── */
+/* Mouse users get the add-to-cart bar on hover; touch screens always see it */
+@media (hover: hover) {
+  .collection-card .collection-card__add {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  .collection-card:hover .collection-card__add,
+  .collection-card:focus-within .collection-card__add {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .collection-card .collection-card__fade {
+    opacity: 0;
+  }
+  .collection-card:hover .collection-card__fade {
+    opacity: 1;
+  }
+}
+
+@keyframes collection-rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.collection-rise {
+  animation: collection-rise 0.7s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collection-rise { animation: none; }
+  .collection-card, .collection-card * { transition: none !important; }
+}

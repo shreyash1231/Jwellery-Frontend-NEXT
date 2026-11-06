@@ -12,6 +12,7 @@ import { caramel } from "./fonts";
 import PopUp from "@/components/PopUp";
 import DulhanBanner from "@/components/DulhanBanner";
 import ShopTheLook from "@/components/ShopTheLook";
+import CollectionSection from "@/components/CollectionSection";
 import { useEffect, useState } from "react";
 
 export default function Home() {
@@ -199,6 +200,9 @@ export default function Home() {
           </div>
         )}
 
+        {/* Collections the admin placed "Below the banner" */}
+        <CollectionSection slot="after_banner" />
+
         {/* ================= SIGNATURE COLLECTION ================= */}
 
         <div className="flex flex-col gap-4 items-center px-4">
@@ -326,7 +330,11 @@ export default function Home() {
           </div>
         </div>
 
+        <CollectionSection slot="after_signature" />
+
         <Category />
+
+        <CollectionSection slot="after_categories" />
 
         {productData?.data?.products?.length > 0 ? (
           <ProductDisplay
@@ -356,8 +364,15 @@ export default function Home() {
           </Button>
         </div>
 
+        <CollectionSection slot="after_best_sellers" />
+
         <ShopTheLook />
+
+        <CollectionSection slot="after_shop_the_look" />
+
         <DulhanBanner />
+
+        <CollectionSection slot="after_dulhan" />
 
       </div>
     </>

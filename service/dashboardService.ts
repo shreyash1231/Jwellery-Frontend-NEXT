@@ -77,6 +77,50 @@ export const fetchSiteSettings = async (): Promise<SiteSettings> => {
   return { newFeaturesEnabled: !!res.data?.data?.newFeaturesEnabled };
 };
 
+// Collections: homepage previews (first 4 products each) and one full collection
+export type CollectionPlacement =
+  | "after_banner"
+  | "after_signature"
+  | "after_categories"
+  | "after_best_sellers"
+  | "after_shop_the_look"
+  | "after_dulhan";
+
+export type CollectionProduct = {
+  _id: string;
+  name: string;
+  sellingPrice: number;
+  mrp?: number;
+  imageUrl: string[] | string;
+  categoryId?: string | { _id: string; name?: string };
+};
+
+export type HomeCollection = {
+  _id: string;
+  title: string;
+  placement: CollectionPlacement;
+  totalProducts: number;
+  products: CollectionProduct[];
+};
+
+export type CollectionDetail = {
+  _id: string;
+  title: string;
+  totalProducts: number;
+  categories: { _id: string; name: string }[];
+  products: CollectionProduct[];
+};
+
+export const fetchHomeCollections = async (): Promise<HomeCollection[]> => {
+  const res = await axios.get(`${API}/api/v1/user/get-home-collections`);
+  return res.data?.data || [];
+};
+
+export const fetchCollection = async (id: string): Promise<CollectionDetail> => {
+  const res = await axios.get(`${API}/api/v1/user/get-collection/${id}`);
+  return res.data?.data;
+};
+
 export const fetchMarquee = async (): Promise<MarqueeSettings | null> => {
   const res = await axios.get(`${API}/api/v1/user/get-marquee`);
   return res.data?.data ?? null;

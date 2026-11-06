@@ -1,4 +1,4 @@
-import { addNewsletterApi, addToCartAPI, addToCartLocal, fetchAllProducts, fetchBanners, fetchBestProducts, fetchCartService, fetchCategories, fetchCategoriesProducts, fetchFooterDetails, fetchMarquee, fetchReels, fetchSiteSettings, fetchShopProductFunction, getAllContent, getProductsByCategory } from "@/service/dashboardService";
+import { addNewsletterApi, addToCartAPI, addToCartLocal, fetchAllProducts, fetchBanners, fetchBestProducts, fetchCartService, fetchCategories, fetchCategoriesProducts, fetchCollection, fetchFooterDetails, fetchHomeCollections, fetchMarquee, fetchReels, fetchSiteSettings, fetchShopProductFunction, getAllContent, getProductsByCategory } from "@/service/dashboardService";
 import { ContentItem, Reel } from "@/type/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -131,6 +131,25 @@ export const useNewFeatures = () => {
     retry: 1,
   });
   return !!data?.newFeaturesEnabled;
+};
+
+export const useHomeCollections = () => {
+  return useQuery({
+    queryKey: ["home-collections"],
+    queryFn: fetchHomeCollections,
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
+};
+
+export const useCollection = (id: string) => {
+  return useQuery({
+    queryKey: ["collection", id],
+    queryFn: () => fetchCollection(id),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
 };
 
 export const useReels = () => {
