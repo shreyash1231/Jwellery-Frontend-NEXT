@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { API, validateCouponApi } from "@/service/dashboardService";
@@ -41,6 +41,9 @@ export default function CheckoutPage() {
   const [couponError, setCouponError] = useState("");
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [confettiKey, setConfettiKey] = useState(0);
+  // The confetti bursts out of the coupon box
+  const couponBoxRef = useRef<HTMLDivElement>(null);
+  const [confettiOrigin, setConfettiOrigin] = useState<{ x: number; y: number } | null>(null);
 
   const newFeatures = useNewFeatures();
   // Old version reports coupon problems as toasts instead of under the box
@@ -181,7 +184,11 @@ export default function CheckoutPage() {
       setDiscount(result.discount);
       setAppliedCoupon(result.coupon);
       setCouponCode(result.coupon.code);
-      if (newFeatures) setConfettiKey((k) => k + 1);
+      if (newFeatures) {
+        const box = couponBoxRef.current?.getBoundingClientRect();
+        setConfettiOrigin(box ? { x: box.left + box.width / 2, y: box.top + box.height / 2 } : null);
+        setConfettiKey((k) => k + 1);
+      }
       else toast.success(`"${result.coupon.code}" applied! You save ₹${Number(result.discount).toFixed(2)}`);
     } catch (err: any) {
       showCouponError(
@@ -468,7 +475,7 @@ const openRazorpay = async (orderData: any) => {
   return (
     <>
 
-      {newFeatures && <Confetti fireKey={confettiKey} />}
+      {newFeatures && <Confetti fireKey={confettiKey} origin={confettiOrigin} />}
 
       <div className="min-h-screen p-6 arial-font">
         <div className="max-w-7xl mx-auto px-6 mb-6">
@@ -539,7 +546,7 @@ const openRazorpay = async (orderData: any) => {
 
             {/* Coupon */}
             {items.length > 0 && (
-              <div className="relative my-4">
+              <div className="relative my-4" ref={couponBoxRef}>
                 <div className="flex gap-2">
                   {!isLoggedIn ? (
                     <div className="w-full border p-2 rounded-lg text-sm text-gray-400 bg-gray-50 text-center">
