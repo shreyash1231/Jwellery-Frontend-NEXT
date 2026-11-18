@@ -67,14 +67,94 @@ export type MarqueeSettings = {
   isActive: boolean;
 };
 
-export type SiteSettings = {
+export type DeliverySettings = {
+  deliveryCharge: number;
+  // Orders above this ship free; 0 means delivery is always charged
+  freeDeliveryAbove: number;
+  // fixed: arrives in deliveryDaysMin days; range: between deliveryDaysMin and deliveryDaysMax days
+  deliveryDaysType: "fixed" | "range";
+  deliveryDaysMin: number;
+  deliveryDaysMax: number;
+};
+
+export type SiteSettings = DeliverySettings & {
   newFeaturesEnabled: boolean;
 };
+
+// Same defaults as the server (the old fixed rule: ₹200 on orders up to ₹5000)
+export const DEFAULT_DELIVERY: DeliverySettings = {
+  deliveryCharge: 200,
+  freeDeliveryAbove: 5000,
+  deliveryDaysType: "range",
+  deliveryDaysMin: 3,
+  deliveryDaysMax: 7,
+};
+
+// Delivery charge for an order total after coupon; must match the server's rule
+export const shippingChargeFor = (orderTotal: number, s: DeliverySettings = DEFAULT_DELIVERY) => {
+  const freeAbove = Number(s.freeDeliveryAbove) || 0;
+  if (freeAbove > 0 && orderTotal > freeAbove) return 0;
+  return Math.max(0, Number(s.deliveryCharge) || 0);
+};
+
+const num = (v: unknown, fallback: number) => (Number.isFinite(Number(v)) && v !== null && v !== "" ? Number(v) : fallback);
 
 // Off unless the admin has switched it on, so a failed request shows the old site
 export const fetchSiteSettings = async (): Promise<SiteSettings> => {
   const res = await axios.get(`${API}/api/v1/user/get-site-settings`);
-  return { newFeaturesEnabled: !!res.data?.data?.newFeaturesEnabled };
+  const d = res.data?.data || {};
+  return {
+    newFeaturesEnabled: !!d.newFeaturesEnabled,
+    deliveryCharge: num(d.deliveryCharge, DEFAULT_DELIVERY.deliveryCharge),
+    freeDeliveryAbove: num(d.freeDeliveryAbove, DEFAULT_DELIVERY.freeDeliveryAbove),
+    deliveryDaysType: d.deliveryDaysType === "fixed" ? "fixed" : "range",
+    deliveryDaysMin: num(d.deliveryDaysMin, DEFAULT_DELIVERY.deliveryDaysMin),
+    deliveryDaysMax: num(d.deliveryDaysMax, DEFAULT_DELIVERY.deliveryDaysMax),
+  };
+};
+
+// Product reviews (added by the admin; customers can only read them)
+export type ReviewSort = "newest" | "verified" | "photos";
+
+export type ReviewMedia = { type: "image" | "video"; url: string };
+
+export type ProductReview = {
+  _id: string;
+  reviewerName: string;
+  rating: number;
+  comment: string;
+  isVerifiedPurchase: boolean;
+  media: ReviewMedia[];
+  reviewedAt: string;
+};
+
+export type ReviewSummary = {
+  average: number;
+  count: number;
+  distribution: Record<"1" | "2" | "3" | "4" | "5", number>;
+  verified: number;
+  withMedia: number;
+};
+
+export type ReviewPage = {
+  reviews: ProductReview[];
+  page: number;
+  limit: number;
+  total: number;
+  hasMore: boolean;
+  summary: ReviewSummary;
+};
+
+export const fetchProductReviews = async (
+  productId: string,
+  sort: ReviewSort,
+  page: number,
+  limit = 5,
+): Promise<ReviewPage> => {
+  const res = await axios.get(`${API}/api/v1/user/get-product-reviews/${productId}`, {
+    params: { sort, page, limit },
+  });
+  return res.data?.data;
 };
 
 // Collections: homepage previews (first 4 products each) and one full collection
@@ -93,6 +173,8 @@ export type CollectionProduct = {
   mrp?: number;
   imageUrl: string[] | string;
   categoryId?: string | { _id: string; name?: string };
+  ratingAverage?: number;
+  ratingCount?: number;
 };
 
 export type HomeCollection = {

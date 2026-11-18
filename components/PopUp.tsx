@@ -8,7 +8,8 @@ import { API } from "@/service/dashboardService";
 // ─── Constants ────────────────────────────────────────────────────────────────
 const POPUP_SUBMITTED_KEY = "user_info_popup_submitted";
 const POPUP_LAST_CLOSED_KEY = "user_info_popup_last_closed";
-const POPUP_INTERVAL_MS = 3 *1000; // 2 minutes
+// After the visitor closes the popup it comes back 4 minutes later (also across reloads)
+const POPUP_INTERVAL_MS = 4 * 60 * 1000;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface UserInfoForm {
@@ -69,36 +70,23 @@ export default function PopUp() {
 
   // ── Effects ────────────────────────────────────────────────────────────────
 
-  // Stamp "last closed" on first load (so interval starts from now)
+  // While closed, open again once 4 minutes have passed since the last close.
+  // First visit (never closed) opens straight away.
   useEffect(() => {
+    if (showUserInfoPopup) return;
+
     const hasSubmitted = localStorage.getItem(POPUP_SUBMITTED_KEY) === "true";
     if (isUserLoggedIn() || hasSubmitted) return;
-    localStorage.setItem(POPUP_LAST_CLOSED_KEY, Date.now().toString());
-  }, []);
 
-  useEffect(() => {
-  const hasSubmitted =
-    localStorage.getItem(POPUP_SUBMITTED_KEY) === "true";
+    const lastClosed = Number(localStorage.getItem(POPUP_LAST_CLOSED_KEY)) || 0;
+    const wait = Math.max(0, lastClosed + POPUP_INTERVAL_MS - Date.now());
 
-  if (isUserLoggedIn() || hasSubmitted) return;
+    const timer = setTimeout(() => {
+      setShowUserInfoPopup(true);
+    }, wait);
 
-  setShowUserInfoPopup(true);
-}, []);
-
-useEffect(() => {
-  if (showUserInfoPopup) return;
-
-  const hasSubmitted =
-    localStorage.getItem(POPUP_SUBMITTED_KEY) === "true";
-
-  if (isUserLoggedIn() || hasSubmitted) return;
-
-  const timer = setTimeout(() => {
-    setShowUserInfoPopup(true);
-  }, 30 * 1000); // 30 seconds
-
-  return () => clearTimeout(timer);
-}, [showUserInfoPopup]);
+    return () => clearTimeout(timer);
+  }, [showUserInfoPopup]);
 
   // Lock body scroll while popup is open
   useEffect(() => {
@@ -108,14 +96,15 @@ useEffect(() => {
     };
   }, [showUserInfoPopup]);
 
-  // Close on Escape key
+  // Close on Escape key (only while open, so it doesn't restart the 4-minute wait)
   useEffect(() => {
+    if (!showUserInfoPopup) return;
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeUserInfoPopup();
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, []);
+  }, [showUserInfoPopup]);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleUserInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {

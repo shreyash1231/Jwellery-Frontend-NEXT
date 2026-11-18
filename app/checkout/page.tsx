@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { API, validateCouponApi } from "@/service/dashboardService";
-import { useNewFeatures } from "@/hooks/useDashboard";
+import { API, DEFAULT_DELIVERY, shippingChargeFor, validateCouponApi } from "@/service/dashboardService";
+import { useNewFeatures, useSiteSettings } from "@/hooks/useDashboard";
 import { toast } from "sonner";
 import Confetti from "@/components/Confetti";
 
@@ -46,6 +46,7 @@ export default function CheckoutPage() {
   const [confettiOrigin, setConfettiOrigin] = useState<{ x: number; y: number } | null>(null);
 
   const newFeatures = useNewFeatures();
+  const { data: siteSettings } = useSiteSettings();
   // Old version reports coupon problems as toasts instead of under the box
   const showCouponError = (msg: string) =>
     newFeatures ? setCouponError(msg) : toast.error(msg);
@@ -467,7 +468,8 @@ const openRazorpay = async (orderData: any) => {
     }
   };
 
-  const shippingCharge = (subtotal - discount) <= 5000 ? 200 : 0;
+  // Charge and free-delivery limit come from the admin's Delivery page (same rule as the server)
+  const shippingCharge = shippingChargeFor(subtotal - discount, siteSettings || DEFAULT_DELIVERY);
   const isLoggedIn =
     typeof window !== "undefined" ? !!localStorage.getItem("token") : false;
 

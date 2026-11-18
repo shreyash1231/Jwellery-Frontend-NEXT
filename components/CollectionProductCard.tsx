@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { FiShoppingBag, FiArrowUpRight } from "react-icons/fi";
-import { useAddToCart } from "@/hooks/useDashboard";
+import { useAddToCart, useNewFeatures } from "@/hooks/useDashboard";
 import DiscountBadge, { getDiscountPercent } from "./DiscountBadge";
+import RatingLine from "./StarRating";
 import type { CollectionProduct } from "@/service/dashboardService";
 
 const imageUrl = (path?: string) =>
@@ -17,6 +18,7 @@ export default function CollectionProductCard({ product }: { product: Collection
   const { mutate: addToCart, isPending } = useAddToCart();
   const images: string[] = Array.isArray(product.imageUrl) ? product.imageUrl : [product.imageUrl].filter(Boolean);
   const discount = getDiscountPercent(product);
+  const newFeatures = useNewFeatures();
   const href = `/product/${product._id}`;
 
   return (
@@ -68,6 +70,7 @@ export default function CollectionProductCard({ product }: { product: Collection
         <h3 className="arial-font line-clamp-2 min-h-[2.6em] text-[15px] font-semibold leading-snug text-[#2b2118] md:text-base">
           {product.name}
         </h3>
+        {newFeatures && <RatingLine average={product.ratingAverage} count={product.ratingCount} size={13} />}
         <span className="h-px w-10 bg-gradient-to-r from-transparent via-[#c9a227] to-transparent" />
         <div className="arial-font flex flex-wrap items-baseline justify-center gap-x-2">
           <span className="text-lg font-bold text-[#b32126]">{rupees(product.sellingPrice)}</span>

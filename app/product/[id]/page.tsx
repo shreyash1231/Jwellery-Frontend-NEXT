@@ -3,11 +3,14 @@
 import { useEffect, useState } from "react";
 import { useParams,useRouter } from "next/navigation";
 import Loader from "@/components/Loader"
-import { API } from "@/service/dashboardService";
-import { useCategoriesProduct, useNewFeatures } from "@/hooks/useDashboard";
+import { API, DEFAULT_DELIVERY } from "@/service/dashboardService";
+import { useCategoriesProduct, useNewFeatures, useSiteSettings } from "@/hooks/useDashboard";
 import ProductDisplay from "@/components/ProductDisplay";
 import DiscountBadge, { getDiscountPercent } from "@/components/DiscountBadge";
 import Footer from "@/components/Footer";
+import RatingLine from "@/components/StarRating";
+import DeliveryCheck from "@/components/DeliveryCheck";
+import ProductReviews from "@/components/ProductReviews";
 import { useRef } from "react";
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_BASE_URL;
 
@@ -32,6 +35,7 @@ const LENS = 140;
   const [openSection, setOpenSection] = useState<string | null>("");
 
   const newFeatures = useNewFeatures();
+  const delivery = useSiteSettings().data || DEFAULT_DELIVERY;
   const discountPercent = newFeatures ? getDiscountPercent(product) : 0;
 
   const toggleSection = (section: string) => {
@@ -180,6 +184,13 @@ const handleBuyNow = () => {
           </span>
         </h1>
 
+        {/* Rating: jumps to the reviews below */}
+        {newFeatures && product.ratingCount > 0 && (
+          <a href="#reviews" className="-mt-2 w-fit hover:underline" aria-label="See customer reviews">
+            <RatingLine average={product.ratingAverage} count={product.ratingCount} size={18} className="text-base" />
+          </a>
+        )}
+
         {/* Price */}
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-3xl text-[#c41e3a] font-bold">
@@ -210,22 +221,38 @@ const handleBuyNow = () => {
           {product.description}
         </p>
 
-        {/* Free Shipping */}
+        {/* Delivery: pincode check (charge and days set by the admin), or the old fixed note */}
+        {newFeatures ? (
+          <DeliveryCheck price={product.sellingPrice} />
+        ) : (
         <div className="flex items-center gap-3 p-3">
           <span>🚚</span>
           <div>
             <p className="text-[#555] font-semibold ">Shipping Information</p>
 
-            <p className="text-sm text-[#555] font-semibold ">
-              Free delivery on orders above <span className="font-medium">₹5000</span>
-            </p>
+            {delivery.deliveryCharge > 0 && delivery.freeDeliveryAbove > 0 ? (
+              <>
+                <p className="text-sm text-[#555] font-semibold ">
+                  Free delivery on orders above <span className="font-medium">₹{delivery.freeDeliveryAbove}</span>
+                </p>
 
-            <p className="text-sm text-[#555] font-semibold ">
-              Orders below <span className="font-medium">₹5000</span> have delivery charges of{" "}
-              <span className="font-medium">₹200</span>
-            </p>
+                <p className="text-sm text-[#555] font-semibold ">
+                  Orders below <span className="font-medium">₹{delivery.freeDeliveryAbove}</span> have delivery charges of{" "}
+                  <span className="font-medium">₹{delivery.deliveryCharge}</span>
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-[#555] font-semibold ">
+                {delivery.deliveryCharge > 0 ? (
+                  <>Delivery charge of <span className="font-medium">₹{delivery.deliveryCharge}</span> on every order</>
+                ) : (
+                  "Free delivery on all orders"
+                )}
+              </p>
+            )}
           </div>
         </div>
+        )}
 
         {/* ACCORDIONS */}
         <div className="border-t pt-4">
@@ -298,6 +325,7 @@ const handleBuyNow = () => {
 
       </div>
     </div>
+    {newFeatures && <ProductReviews productId={product._id} />}
     <ProductDisplay
     title="Related Products"
     subtitle="Explore more pieces from the same category."

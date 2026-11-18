@@ -1,6 +1,7 @@
-import { addNewsletterApi, addToCartAPI, addToCartLocal, fetchAllProducts, fetchBanners, fetchBestProducts, fetchCartService, fetchCategories, fetchCategoriesProducts, fetchCollection, fetchFooterDetails, fetchHomeCollections, fetchMarquee, fetchReels, fetchSiteSettings, fetchShopProductFunction, getAllContent, getProductsByCategory } from "@/service/dashboardService";
+import { addNewsletterApi, addToCartAPI, addToCartLocal, fetchAllProducts, fetchBanners, fetchBestProducts, fetchCartService, fetchCategories, fetchCategoriesProducts, fetchCollection, fetchFooterDetails, fetchHomeCollections, fetchMarquee, fetchProductReviews, fetchReels, fetchSiteSettings, fetchShopProductFunction, getAllContent, getProductsByCategory } from "@/service/dashboardService";
 import { ContentItem, Reel } from "@/type/api";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { ReviewSort } from "@/service/dashboardService";
 import { toast } from "sonner";
 
 
@@ -131,6 +132,28 @@ export const useNewFeatures = () => {
     retry: 1,
   });
   return !!data?.newFeaturesEnabled;
+};
+
+// Full site settings (feature switch + delivery charge/days); shares the cache with useNewFeatures
+export const useSiteSettings = () => {
+  return useQuery({
+    queryKey: ["site-settings"],
+    queryFn: fetchSiteSettings,
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
+};
+
+// A product's reviews, 5 per page; fetchNextPage loads the next 5 ("Load more")
+export const useProductReviews = (productId: string | undefined, sort: ReviewSort) => {
+  return useInfiniteQuery({
+    queryKey: ["product-reviews", productId, sort],
+    queryFn: ({ pageParam }) => fetchProductReviews(productId as string, sort, pageParam, 5),
+    initialPageParam: 1,
+    getNextPageParam: (last) => (last?.hasMore ? last.page + 1 : undefined),
+    enabled: !!productId,
+    staleTime: 1000 * 60,
+  });
 };
 
 export const useHomeCollections = () => {

@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API } from "@/service/dashboardService";
 import DiscountBadge, { getDiscountPercent } from "./DiscountBadge";
+import RatingLine from "./StarRating";
 
 // ── helpers ────────────────────────────────────────────────────────────────
 function getToken(): string | null {
@@ -215,6 +216,9 @@ export function ProductCard({
       {/* Content */}
       <div className="px-3 flex flex-col gap-3 pb-3">
         <span className="text-xl font-semibold">{title}</span>
+        {newFeatures && (
+          <RatingLine average={productData?.ratingAverage} count={productData?.ratingCount} className="-mt-1.5" />
+        )}
         <hr className="border-black border" />
 
         <div className="flex items-center">
