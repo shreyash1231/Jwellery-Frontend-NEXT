@@ -11,6 +11,48 @@ const POPUP_LAST_CLOSED_KEY = "user_info_popup_last_closed";
 // After the visitor closes the popup it comes back 4 minutes later (also across reloads)
 const POPUP_INTERVAL_MS = 4 * 60 * 1000;
 
+// ─── Storage ──────────────────────────────────────────────────────────────────
+// The close/submit marks are kept in localStorage AND a cookie. localStorage alone failed:
+// www.kuchalagindia.com and kuchalagindia.com each have their own, and some phone
+// browsers don't keep it, so after a reload the popup opened again straight away.
+// The cookie is set on the main domain so www and non-www share it.
+const cookieDomain = (): string => {
+  const host = window.location.hostname;
+  if (host === "localhost" || /^[\d.]+$/.test(host)) return "";
+  return `; domain=.${host.replace(/^www\./, "")}`;
+};
+
+const readMark = (key: string): string | null => {
+  let local: string | null = null;
+  try {
+    local = localStorage.getItem(key);
+  } catch {}
+  const match = document.cookie.match(new RegExp(`(?:^|; )${key}=([^;]*)`));
+  const cookie = match ? decodeURIComponent(match[1]) : null;
+  if (key === POPUP_LAST_CLOSED_KEY) {
+    // Latest close wins
+    const latest = Math.max(Number(local) || 0, Number(cookie) || 0);
+    return latest ? String(latest) : null;
+  }
+  return local ?? cookie;
+};
+
+const writeMark = (key: string, value: string) => {
+  try {
+    localStorage.setItem(key, value);
+  } catch {}
+  const maxAge = 60 * 60 * 24 * 365;
+  document.cookie = `${key}=${encodeURIComponent(value)}; max-age=${maxAge}; path=/; SameSite=Lax${cookieDomain()}`;
+};
+
+const isUserLoggedIn = (): boolean => {
+  try {
+    return localStorage.getItem("token") != null;
+  } catch {
+    return false;
+  }
+};
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface UserInfoForm {
   firstName: string;
@@ -58,13 +100,8 @@ export default function PopUp() {
   });
 
   // ── Helpers ────────────────────────────────────────────────────────────────
-  const isUserLoggedIn = (): boolean => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("token") != null;
-  };
-
   const closeUserInfoPopup = () => {
-    localStorage.setItem(POPUP_LAST_CLOSED_KEY, Date.now().toString());
+    writeMark(POPUP_LAST_CLOSED_KEY, Date.now().toString());
     setShowUserInfoPopup(false);
   };
 
@@ -75,10 +112,11 @@ export default function PopUp() {
   useEffect(() => {
     if (showUserInfoPopup) return;
 
-    const hasSubmitted = localStorage.getItem(POPUP_SUBMITTED_KEY) === "true";
+    const hasSubmitted = readMark(POPUP_SUBMITTED_KEY) === "true";
     if (isUserLoggedIn() || hasSubmitted) return;
 
-    const lastClosed = Number(localStorage.getItem(POPUP_LAST_CLOSED_KEY)) || 0;
+    // A close stamped in the future (device clock moved back) counts as just now
+    const lastClosed = Math.min(Number(readMark(POPUP_LAST_CLOSED_KEY)) || 0, Date.now());
     const wait = Math.max(0, lastClosed + POPUP_INTERVAL_MS - Date.now());
 
     const timer = setTimeout(() => {
@@ -130,7 +168,7 @@ export default function PopUp() {
       const response = await addUserInfoApi(payload);
 
       if (response?.success) {
-        localStorage.setItem(POPUP_SUBMITTED_KEY, "true");
+        writeMark(POPUP_SUBMITTED_KEY, "true");
         setShowUserInfoPopup(false);
         setUserInfoForm({
           firstName: "",
