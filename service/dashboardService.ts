@@ -45,18 +45,25 @@ export const fetchShopProductFunction = async () => {
 };
 
 
+// The category page has no pager, so every page is fetched and merged:
+// a category can hold more products than one page (e.g. ones linked as extra categories).
 export const getProductsByCategory = async (categoryId: string) => {
-  const res = await axios.get(`${API}/api/v1/user/get-all-products`,
-    {
-      params: {
-        page: 1,
-        limit: 12,
-        categoryId,
-      },
-    }
-  );
+  const limit = 40;
+  const fetchPage = (page: number) =>
+    axios
+      .get(`${API}/api/v1/user/get-all-products`, { params: { page, limit, categoryId } })
+      .then((res) => res.data);
 
-  return res.data;
+  const first = await fetchPage(1);
+  const totalPages = Number(first?.data?.pagination?.totalPages) || 1;
+  if (totalPages <= 1) return first;
+
+  const rest = await Promise.all(
+    Array.from({ length: totalPages - 1 }, (_, i) => fetchPage(i + 2))
+  );
+  const products = [first, ...rest].flatMap((r) => r?.data?.products || []);
+
+  return { ...first, data: { ...first.data, products } };
 };
 
 export type MarqueeSettings = {
