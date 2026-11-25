@@ -1,5 +1,9 @@
 import { getSeoSettings, getSiteUrl } from "@/lib/seo";
 
+// Rebuilt at most every minute. Without this, Next.js builds the file once at deploy time
+// and keeps that copy for good (even when the backend wasn't reachable during the build).
+export const revalidate = 60;
+
 // /robots.txt: the text from Admin > SEO Settings (or the built-in default),
 // always pointing Google to the sitemap
 export async function GET() {
