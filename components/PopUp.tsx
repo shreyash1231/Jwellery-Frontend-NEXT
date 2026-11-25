@@ -220,6 +220,7 @@ export default function PopUp() {
             src="/Images/popupImage.jpeg"
             alt="KuchalagIndia welcome"
             fill
+            sizes="420px"
             className="object-cover"
             priority
           />

@@ -6,11 +6,12 @@ import { Button } from "./ui/button";
 import Link from "next/link";
 import { useAddToCart, useNewFeatures } from "@/hooks/useDashboard";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API } from "@/service/dashboardService";
 import DiscountBadge, { getDiscountPercent } from "./DiscountBadge";
 import RatingLine from "./StarRating";
+import { productPath } from "@/lib/links";
 
 // ── helpers ────────────────────────────────────────────────────────────────
 function getToken(): string | null {
@@ -20,6 +21,8 @@ function getToken(): string | null {
     null
   );
 }
+
+const noSubscribe = () => () => {};
 
 // localStorage key for guest wishlist
 const GUEST_KEY = "guest_wishlist";
@@ -83,7 +86,13 @@ export function ProductCard({
 }: ProductCardProps) {
   const { mutate: addToCart, isPending } = useAddToCart();
   const queryClient = useQueryClient();
-  const isLoggedIn = Boolean(getToken());
+  // The card is also rendered on the server (no localStorage there): "logged out" on the
+  // server and during hydration, the real value right after
+  const isLoggedIn = useSyncExternalStore(
+    noSubscribe,
+    () => Boolean(getToken()),
+    () => false,
+  );
 
   // ── server wishlist ─────────────────────────────────────────────────────
   const { data: serverWishlistIds = [] } = useQuery<string[]>({
@@ -204,7 +213,7 @@ export function ProductCard({
       </div>
 
       {/* Image */}
-      <Link href={`/product/${id}`} className="relative block">
+      <Link href={productPath(productData?.slug ? productData : { _id: id })} className="relative block">
         <img
           src={image}
           alt={title}

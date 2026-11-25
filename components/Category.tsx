@@ -5,6 +5,7 @@ import { useCategories, useNewFeatures } from "@/hooks/useDashboard";
 import Image from "next/image";
 import Link from "next/link";
 import { isTopLevelCategory } from "@/lib/utils";
+import { categoryPath } from "@/lib/links";
 
 export default function Category() {
   const { data: getdataCategory, isLoading } = useCategories();
@@ -42,7 +43,7 @@ export default function Category() {
           return (
             <Link
               key={item._id}
-              href={`/categories/${item._id}`}
+              href={categoryPath(item)}
               className="block"
             >
             <div

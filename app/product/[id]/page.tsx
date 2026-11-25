@@ -1,335 +1,119 @@
-"use client";
+import type { Metadata } from "next";
+import { notFound, permanentRedirect } from "next/navigation";
+import ProductDetail from "@/components/ProductDetail";
+import { Prefetched } from "@/lib/prefetch";
+import { fetchRelatedProducts, fetchSiteSettings } from "@/service/dashboardService";
+import {
+  breadcrumbSchema,
+  buildMetadata,
+  categoryPath,
+  getProduct,
+  getSeoSettings,
+  getSiteUrl,
+  imageUrl,
+  jsonLd,
+  productPath,
+  summarize,
+  type SeoProduct,
+  toKeywords,
+} from "@/lib/seo";
 
-import { useEffect, useState } from "react";
-import { useParams,useRouter } from "next/navigation";
-import Loader from "@/components/Loader"
-import { API, DEFAULT_DELIVERY } from "@/service/dashboardService";
-import { useCategoriesProduct, useNewFeatures, useSiteSettings } from "@/hooks/useDashboard";
-import ProductDisplay from "@/components/ProductDisplay";
-import DiscountBadge, { getDiscountPercent } from "@/components/DiscountBadge";
-import Footer from "@/components/Footer";
-import RatingLine from "@/components/StarRating";
-import DeliveryCheck from "@/components/DeliveryCheck";
-import ProductReviews from "@/components/ProductReviews";
-import { useRef } from "react";
-const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_BASE_URL;
+type Props = { params: Promise<{ id: string }> };
 
-export default function ProductDetail() {
-  const { id } = useParams();
-  const router = useRouter();
-
-  const imageRef = useRef<HTMLDivElement | null>(null);
-
-const [magnifier, setMagnifier] = useState({
-  show: false,
-  x: 0,
-  y: 0,
-});
-
-const ZOOM = 2.5;
-const LENS = 140;
-
-  const [product, setProduct] = useState<any>(null);
-  const [selectedImage, setSelectedImage] = useState<string>("");
-
-  const [openSection, setOpenSection] = useState<string | null>("");
-
-  const newFeatures = useNewFeatures();
-  const delivery = useSiteSettings().data || DEFAULT_DELIVERY;
-  const discountPercent = newFeatures ? getDiscountPercent(product) : 0;
-
-  const toggleSection = (section: string) => {
-    setOpenSection(openSection === section ? null : section);
-  };
-
-  useEffect(() => {
-    if (!id) return;
-
-    const fetchProduct = async () => {
-      const res = await fetch(
-        `${API}/api/v1/user/get-product-by-id/${id}`
-      );
-      const data = await res.json();
-
-      setProduct(data.data);
-      setSelectedImage(data.data.imageUrl[0]);
-    };
-
-    fetchProduct();
-  }, [id]);
-  
-const handleMouseMove = (e: React.MouseEvent) => {
-  if (!imageRef.current) return;
-
-  const rect = imageRef.current.getBoundingClientRect();
-
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-
-  setMagnifier({
-    show: true,
-    x,
-    y,
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const res = await getProduct(id);
+  if (res.status !== "ok") return {};
+  const p = res.data;
+  return buildMetadata({
+    // Admin's meta title as written; otherwise "<product name> | Kuchalag India"
+    absoluteTitle: p.metaTitle?.trim() || undefined,
+    title: p.metaTitle?.trim() ? undefined : p.name,
+    description: p.metaDescription || p.description,
+    keywords: toKeywords(p.metaKeywords, p.tags, p.categoryId?.name),
+    path: productPath(p),
+    images: (p.imageUrl || []).map((src: string) => imageUrl(src)),
   });
-};
-
-const handleMouseLeave = () => {
-  setMagnifier((prev) => ({ ...prev, show: false }));
-};
-  const categoryId = product?.categoryId?._id;
-
- const {
-    data: categoryProducts,
-    isLoading: isCategoryLoading,
-    isError,
-    } = useCategoriesProduct(categoryId);
-
-if (!product || isCategoryLoading) {
-  return <Loader />;
 }
-const handleBuyNow = () => {
-  const checkoutItem = [
-    {
-      productId: product._id,
-      name: product.name,
-      price: product.sellingPrice,
-      imageUrl: product.imageUrl?.[0],
-      quantity: 1,
+
+// Product details for Google (price, stock, rating)
+async function productSchema(p: SeoProduct) {
+  const siteUrl = await getSiteUrl();
+  const { siteName } = await getSeoSettings();
+  // sellingPrice already includes any running discount (backend applies offers)
+  const price = Number(p.sellingPrice) || undefined;
+  const schema: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: p.name,
+    description: summarize(p.metaDescription || p.description, 500),
+    image: (p.imageUrl || []).map((src: string) => imageUrl(src)).filter(Boolean),
+    sku: String(p._id),
+    url: `${siteUrl}${productPath(p)}`,
+    brand: { "@type": "Brand", name: siteName },
+    category: p.categoryId?.name,
+    keywords: (p.tags || []).join(", ") || undefined,
+    offers: {
+      "@type": "Offer",
+      url: `${siteUrl}${productPath(p)}`,
+      priceCurrency: "INR",
+      price,
+      availability:
+        p.shipmentType === "order" || Number(p.quantity) > 0
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
     },
-  ];
+  };
+  if (Number(p.ratingCount) > 0) {
+    schema.aggregateRating = {
+      "@type": "AggregateRating",
+      ratingValue: Number(p.ratingAverage).toFixed(1),
+      reviewCount: p.ratingCount,
+    };
+  }
+  return schema;
+}
 
-  localStorage.setItem("checkoutItems", JSON.stringify(checkoutItem));
+export default async function ProductPage({ params }: Props) {
+  const { id } = await params;
+  const res = await getProduct(id);
 
-  router.push("/checkout");
-};
+  if (res.status === "missing") notFound();
+
+  // Backend unreachable from the server: let the browser load it as before
+  if (res.status === "error") return <ProductDetail id={id} />;
+
+  const product = res.data;
+  // Old links (/product/<id> or a previous slug) move to the current readable URL
+  if (product.slug && decodeURIComponent(id) !== product.slug) {
+    permanentRedirect(productPath(product));
+  }
 
   return (
-  <div className="min-h-screen py-10 arial-font">
-    <div className="max-w-7xl mx-auto px-6 mb-6">
-  <button
-    onClick={() => router.push("/")}
-    className="flex items-center gap-2 text-[#555] hover:text-black font-medium text-xl"
-  >
-    ← Back to Home
-  </button>
-</div>
-    <div
-    className="max-w-7xl mx-auto grid md:grid-cols-2 gap-10 px-6 items-stretch">
-
-      {/* LEFT IMAGE CARD */}
-      <div>
-       <div
-          ref={imageRef}
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
-          className="relative w-full md:h-[735px] lg:h-[675px] xl:h-[625px] rounded-xl overflow-hidden"
-        >
-          {/* Main Image */}
-          <img
-            src={`${IMAGE_BASE_URL}/${selectedImage}`}
-            className="w-full h-full object-cover"
-          />
-
-          {magnifier.show && (
-          <div
-            style={{
-              position: "absolute",
-              width: `${LENS}px`,
-              height: `${LENS}px`,
-              borderRadius: "50%",
-              border: "3px solid white",
-              pointerEvents: "none",
-              left: magnifier.x - LENS / 2,
-              top: magnifier.y - LENS / 2,
-              backgroundImage: `url(${IMAGE_BASE_URL}/${selectedImage})`,
-              backgroundRepeat: "no-repeat",
-              backgroundSize: `${
-                (imageRef.current?.clientWidth ?? 0) * ZOOM
-              }px ${
-                (imageRef.current?.clientHeight ?? 0) * ZOOM
-              }px`,
-              backgroundPosition: `
-                -${magnifier.x * ZOOM - LENS / 2}px
-                -${magnifier.y * ZOOM - LENS / 2}px
-              `,
-              boxShadow: "0 8px 20px rgba(0,0,0,0.3)",
-              zIndex: 10,
-            }}
-          />
-        )}
-        </div>
-        {/* Thumbnails */}
-        <div className="flex gap-3 mt-3 overflow-x-auto whitespace-nowrap scrollbar-hide">
-          {product.imageUrl.map((img: string, i: number) => (
-            <img
-              key={i}
-              src={`${IMAGE_BASE_URL}/${img}`}
-              onClick={() => setSelectedImage(img)}
-              className={`w-20 h-20 object-cover rounded cursor-pointer border-2 ${
-                selectedImage === img ? "border-red-500" : "border-gray-300"
-              }`}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* RIGHT CONTENT CARD */}
-      <div className="flex flex-col gap-5">
-
-        {/* Title */}
-        <h1 className="text-3xl font-semibold">
-          {product.name} -{" "}
-          <span className="text-[#c41e3a]">
-            {product.categoryId?.name}
-          </span>
-        </h1>
-
-        {/* Rating: jumps to the reviews below */}
-        {newFeatures && product.ratingCount > 0 && (
-          <a href="#reviews" className="-mt-2 w-fit hover:underline" aria-label="See customer reviews">
-            <RatingLine average={product.ratingAverage} count={product.ratingCount} size={18} className="text-base" />
-          </a>
-        )}
-
-        {/* Price */}
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-3xl text-[#c41e3a] font-bold">
-            Rs {product.sellingPrice.toLocaleString("en-IN")}/-
-          </span>
-          {discountPercent > 0 && (
-            <>
-              <span className="text-xl text-gray-500 line-through">
-                Rs {Number(product.mrp).toLocaleString("en-IN")}/-
-              </span>
-              <DiscountBadge percent={discountPercent} className="text-sm" />
-            </>
-          )}
-        </div>
-        {discountPercent > 0 && (
-          <p className="text-green-700 font-semibold text-sm -mt-2">
-            You save Rs {(product.mrp - product.sellingPrice).toLocaleString("en-IN")}
-          </p>
-        )}
-
-        {/* Tax */}
-        <p className="text-[#555] font-semibold text-sm">
-          Tax included. Shipping calculated at checkout
-        </p>
-
-        {/* Description */}
-        <p className="text-[#555] font-semibold">
-          {product.description}
-        </p>
-
-        {/* Delivery: pincode check (charge and days set by the admin), or the old fixed note */}
-        {newFeatures ? (
-          <DeliveryCheck price={product.sellingPrice} />
-        ) : (
-        <div className="flex items-center gap-3 p-3">
-          <span>🚚</span>
-          <div>
-            <p className="text-[#555] font-semibold ">Shipping Information</p>
-
-            {delivery.deliveryCharge > 0 && delivery.freeDeliveryAbove > 0 ? (
-              <>
-                <p className="text-sm text-[#555] font-semibold ">
-                  Free delivery on orders above <span className="font-medium">₹{delivery.freeDeliveryAbove}</span>
-                </p>
-
-                <p className="text-sm text-[#555] font-semibold ">
-                  Orders below <span className="font-medium">₹{delivery.freeDeliveryAbove}</span> have delivery charges of{" "}
-                  <span className="font-medium">₹{delivery.deliveryCharge}</span>
-                </p>
-              </>
-            ) : (
-              <p className="text-sm text-[#555] font-semibold ">
-                {delivery.deliveryCharge > 0 ? (
-                  <>Delivery charge of <span className="font-medium">₹{delivery.deliveryCharge}</span> on every order</>
-                ) : (
-                  "Free delivery on all orders"
-                )}
-              </p>
-            )}
-          </div>
-        </div>
-        )}
-
-        {/* ACCORDIONS */}
-        <div className="border-t pt-4">
-          <button
-            onClick={() => toggleSection("returns")}
-            className="flex justify-between w-full font-semibold text-lg"
-          >
-            Returns & Help
-            <span>{openSection === "returns" ? "▲" : "▼"}</span>
-          </button>
-
-          {openSection === "returns" && (
-            <p className="text-[#555] font-semibold  mt-2 whitespace-pre-line">
-              {product.benefits}
-            </p>
-          )}
-        </div>
-         <div className="border-t pt-4">
-          <button
-            onClick={() => toggleSection("quantity")}
-            className="flex justify-between w-full font-semibold text-lg"
-          >
-            No of Stocks
-            <span>{openSection === "quantity" ? "▲" : "▼"}</span>
-          </button>
-
-          {openSection === "quantity" && (
-            <p className="text-[#555] font-semibold mt-2 whitespace-pre-line">
-              {product.quantity}
-            </p>
-          )}
-        </div>
-
-        <div className="border-t pt-4">
-          <button
-            onClick={() => toggleSection("use")}
-            className="flex justify-between w-full font-semibold text-lg"
-          >
-            How to Use
-            <span>{openSection === "use" ? "▲" : "▼"}</span>
-          </button>
-
-          {openSection === "use" && (
-            <p className="text-[#555] font-semibold  mt-2">
-              {product.use}
-            </p>
-          )}
-        </div>
-
-        <div className="border-t pt-4">
-          <button
-            onClick={() => toggleSection("info")}
-            className="flex justify-between w-full font-semibold text-lg"
-          >
-            Additional Information
-            <span>{openSection === "info" ? "▲" : "▼"}</span>
-          </button>
-
-          {openSection === "info" && (
-            <p className="text-[#555] font-semibold  mt-2 whitespace-pre-line">
-              {product.additionalInfo}
-            </p>
-          )}
-        </div>
-
-        {/* ADD TO CART */}
-        <button     onClick={handleBuyNow} className="mt-6 bg-red-600 text-white py-3 rounded-xl text-lg font-semibold hover:bg-red-700 transition shadow">
-          Add To Cart
-        </button>
-
-      </div>
-    </div>
-    {newFeatures && <ProductReviews productId={product._id} />}
-    <ProductDisplay
-    title="Related Products"
-    subtitle="Explore more pieces from the same category."
-    products={categoryProducts.data.products}
-    />
-  </div>
-);}
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLd(await productSchema(product)) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLd(
+            await breadcrumbSchema([
+              ...(product.categoryId?.name ? [{ name: product.categoryId.name, path: categoryPath(product.categoryId) }] : []),
+              { name: product.name, path: productPath(product) },
+            ]),
+          ),
+        }}
+      />
+      <Prefetched
+        queries={[
+          { queryKey: ["site-settings"], queryFn: fetchSiteSettings },
+          { queryKey: ["related-products", product._id], queryFn: () => fetchRelatedProducts(product._id) },
+        ]}
+      >
+        <ProductDetail id={product._id} initial={product} />
+      </Prefetched>
+    </>
+  );
+}

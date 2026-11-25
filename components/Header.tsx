@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { categoryPath } from "@/lib/links";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCart, useCategories, useNewFeatures, useShopByProductFunction } from "@/hooks/useDashboard";
@@ -279,7 +280,7 @@ const selectedTotal = localCart.reduce((sum, item) => {
             {showFunction && (
               <div className="bg-[#eae3d8]">
                 {shopByFunctionCategories.map((item: any) => (
-                  <Link key={item._id} href={`/categories/${item._id}`} onClick={() => setIsOpen(false)}>
+                  <Link key={item._id} href={categoryPath(item)} onClick={() => setIsOpen(false)}>
                     <div className="arial-font pl-5 py-2 text-black hover:text-blue-600 hover:bg-gray-100 transition border-b border-gray-300">
                       {item.name}
                     </div>
@@ -301,7 +302,7 @@ const selectedTotal = localCart.reduce((sum, item) => {
           {showProduct && (
             <div className="bg-[#eae3d8]">
               {productCategories.map((item: any) => (
-                <Link key={item._id} href={`/categories/${item._id}`} onClick={() => setIsOpen(false)}>
+                <Link key={item._id} href={categoryPath(item)} onClick={() => setIsOpen(false)}>
                   <div className="arial-font pl-5 py-2 text-black hover:text-blue-600 hover:bg-gray-100 transition border-b border-gray-300">
                     {item.name}
                   </div>

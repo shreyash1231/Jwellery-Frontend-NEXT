@@ -1,4 +1,4 @@
-import { addNewsletterApi, addToCartAPI, addToCartLocal, fetchAllProducts, fetchBanners, fetchBestProducts, fetchCartService, fetchCategories, fetchCategoriesProducts, fetchCollection, fetchFooterDetails, fetchHomeCollections, fetchMarquee, fetchProductReviews, fetchReels, fetchSiteSettings, fetchShopProductFunction, getAllContent, getProductsByCategory } from "@/service/dashboardService";
+import { addNewsletterApi, addToCartAPI, addToCartLocal, fetchAllProducts, fetchBanners, fetchBestProducts, fetchCartService, fetchCategories, fetchCategoriesProducts, fetchRelatedProducts, fetchCollection, fetchFooterDetails, fetchHomeCollections, fetchMarquee, fetchProductReviews, fetchReels, fetchSiteSettings, fetchShopProductFunction, getAllContent, getProductsByCategory, policyQuery } from "@/service/dashboardService";
 import { ContentItem, Reel } from "@/type/api";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ReviewSort } from "@/service/dashboardService";
@@ -62,6 +62,17 @@ export const useCategoriesProduct = (id: string) => {
     queryKey: ["categories", id], // ✅ include id
     queryFn: () => fetchCategoriesProducts(id), // ✅ wrap in function
     enabled: !!id, // ✅ prevent early call
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    retry: 2,
+  });
+};
+
+export const useRelatedProducts = (id: string | undefined) => {
+  return useQuery({
+    queryKey: ["related-products", id],
+    queryFn: () => fetchRelatedProducts(id as string),
+    enabled: !!id,
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 10,
     retry: 2,
@@ -238,62 +249,18 @@ export const useCart = () => {
 };
 
 export const useShippingPolicy = () => {
-  return useQuery<ContentItem | null>({
-    queryKey: ["shipping-policy"],
-    queryFn: async () => {
-      const data = await getAllContent();
-
-      const shipping = data.find(
-        (item) => item.type === "SHIPPING_POLICY"
-      );
-
-      return shipping || null;
-    },
-  });
+  return useQuery<ContentItem | null>(policyQuery("shipping-policy", "SHIPPING_POLICY"));
 };
 
 export const useExchangePolicy = () => {
-  return useQuery<ContentItem | null>({
-    queryKey: ["Exchange-policy"],
-    queryFn: async () => {
-      const data = await getAllContent();
-
-      const shipping = data.find(
-        (item) => item.type === "EXCHANGE_POLICY"
-      );
-
-      return shipping || null;
-    },
-  });
+  return useQuery<ContentItem | null>(policyQuery("Exchange-policy", "EXCHANGE_POLICY"));
 };
 
 export const usePrivacyPolicy = () => {
-  return useQuery<ContentItem | null>({
-    queryKey: ["Privacy-policy"],
-    queryFn: async () => {
-      const data = await getAllContent();
-
-      const shipping = data.find(
-        (item) => item.type === "PRIVACY_POLICY"
-      );
-
-      return shipping || null;
-    },
-  });
+  return useQuery<ContentItem | null>(policyQuery("Privacy-policy", "PRIVACY_POLICY"));
 };
 
 
 export const useTermsandCondition = () => {
-  return useQuery<ContentItem | null>({
-    queryKey: ["Terms-policy"],
-    queryFn: async () => {
-      const data = await getAllContent();
-
-      const shipping = data.find(
-        (item) => item.type === "TERMS_AND_CONDITIONS"
-      );
-
-      return shipping || null;
-    },
-  });
+  return useQuery<ContentItem | null>(policyQuery("Terms-policy", "TERMS_AND_CONDITIONS"));
 };

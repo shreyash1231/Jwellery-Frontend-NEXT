@@ -5,6 +5,7 @@ import { FiShoppingBag, FiArrowUpRight } from "react-icons/fi";
 import { useAddToCart, useNewFeatures } from "@/hooks/useDashboard";
 import DiscountBadge, { getDiscountPercent } from "./DiscountBadge";
 import RatingLine from "./StarRating";
+import { productPath } from "@/lib/links";
 import type { CollectionProduct } from "@/service/dashboardService";
 
 const imageUrl = (path?: string) =>
@@ -19,7 +20,7 @@ export default function CollectionProductCard({ product }: { product: Collection
   const images: string[] = Array.isArray(product.imageUrl) ? product.imageUrl : [product.imageUrl].filter(Boolean);
   const discount = getDiscountPercent(product);
   const newFeatures = useNewFeatures();
-  const href = `/product/${product._id}`;
+  const href = productPath(product);
 
   return (
     <article className="collection-card group relative flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-[#eadfca] shadow-[0_2px_10px_rgba(80,50,20,0.06)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_18px_40px_rgba(120,60,30,0.18)] hover:ring-[#c9a227]/60">

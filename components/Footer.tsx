@@ -10,13 +10,14 @@ import { useCategories, useFooter, useNewsletter } from "@/hooks/useDashboard";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { categoryPath } from "@/lib/links";
     export default function Footer() {
   const { data, isLoading: footerLoading } = useFooter();
   const { data: getdataCategory, isLoading: categoryLoading } = useCategories();
   const categories = getdataCategory?.data || [];
         const router = useRouter();
-        const handleClick = (id: string) => {
-          router.push(`/categories/${id}`);
+        const handleClick = (path: string) => {
+          router.push(path);
         };
 
          const [email, setEmail] = useState("");
@@ -98,7 +99,7 @@ const handleSubmit = () => {
                         <span
                           key={item._id}
                           className="text-[18px] cursor-pointer hover:text-orange-500 arial-font"
-                          onClick={() => handleClick(item._id)}
+                          onClick={() => handleClick(categoryPath(item))}
                         >
                           {item.name}
                         </span>

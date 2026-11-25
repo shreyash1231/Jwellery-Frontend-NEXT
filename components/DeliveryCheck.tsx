@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { FiTruck, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
 import { useSiteSettings } from "@/hooks/useDashboard";
 import { DEFAULT_DELIVERY, type DeliverySettings } from "@/service/dashboardService";
@@ -23,21 +23,26 @@ export const deliveryWindow = (s: DeliverySettings) =>
     ? `expected between ${dayLabel(inDays(s.deliveryDaysMin))} – ${dayLabel(inDays(s.deliveryDaysMax))}`
     : `expected by ${dayLabel(inDays(s.deliveryDaysMin))}`;
 
+const noSubscribe = () => () => {};
+const readSavedPincode = () => {
+  try {
+    const p = localStorage.getItem(PIN_KEY) || "";
+    return isValidPincode(p) ? p : "";
+  } catch {
+    return "";
+  }
+};
+
 export default function DeliveryCheck({ price }: { price: number }) {
   const { data } = useSiteSettings();
   const settings: DeliverySettings = data || DEFAULT_DELIVERY;
-  // Brings back the pincode the customer checked last time. Only rendered in the browser
-  // (the product page loads on the client), so reading localStorage here is safe.
-  const [saved] = useState(() => {
-    try {
-      const p = typeof window !== "undefined" ? localStorage.getItem(PIN_KEY) || "" : "";
-      return isValidPincode(p) ? p : "";
-    } catch {
-      return "";
-    }
-  });
-  const [pincode, setPincode] = useState(saved);
-  const [checked, setChecked] = useState<string | null>(saved || null);
+  // The pincode the customer checked last time. The product page is also rendered on the
+  // server (no localStorage there), so it is empty there and during hydration.
+  const saved = useSyncExternalStore(noSubscribe, readSavedPincode, () => "");
+  const [typed, setPincode] = useState<string | null>(null);
+  const pincode = typed ?? saved;
+  const [checkedState, setChecked] = useState<string | null | undefined>(undefined);
+  const checked = checkedState === undefined ? saved || null : checkedState;
   const [error, setError] = useState("");
 
   const check = () => {

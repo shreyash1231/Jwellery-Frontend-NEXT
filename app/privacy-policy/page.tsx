@@ -43,13 +43,14 @@ export default function ShippingPolicyDocs() {
   className="text-[16px] leading-snug text-gray-800
              
              [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mb-2
+             [&_h2[data-h1]]:text-xl
              [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mb-2
              [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:mb-1
              
              [&_p]:mb-1
              [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:mb-1
              [&_li]:mb-[1px]"
-  dangerouslySetInnerHTML={{ __html: data.content }}
+  dangerouslySetInnerHTML={{ __html: String(data.content || "").replace(/<h1\b/gi, "<h2 data-h1").replace(/<\/h1>/gi, "</h2>") }}
 />
   </div>
 </div>

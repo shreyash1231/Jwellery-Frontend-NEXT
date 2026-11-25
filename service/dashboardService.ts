@@ -39,6 +39,12 @@ export const fetchCategoriesProducts = async (id:string) => {
 
 
 
+// Products sharing tags with this one first, then others from its categories
+export const fetchRelatedProducts = async (id: string) => {
+  const res = await axios.get(`${API}/api/v1/user/get-related-products/${id}`, { params: { limit: 12 } });
+  return res.data;
+};
+
 export const fetchShopProductFunction = async () => {
   const res = await axios.get(`${API}/api/v1/user/get-shop-by-prod-categories`);
   return res.data;
@@ -187,6 +193,7 @@ export type CollectionProduct = {
 export type HomeCollection = {
   _id: string;
   title: string;
+  slug?: string;
   placement: CollectionPlacement;
   totalProducts: number;
   products: CollectionProduct[];
@@ -195,6 +202,8 @@ export type HomeCollection = {
 export type CollectionDetail = {
   _id: string;
   title: string;
+  slug?: string;
+  description?: string;
   totalProducts: number;
   categories: { _id: string; name: string }[];
   products: CollectionProduct[];
@@ -354,3 +363,9 @@ export const fetchFooterDetails = async () => {
   const res = await axios.get(`${API}/api/v1/user/get-in-touch`);
   return res.data?.data?.[0] || null;
 };
+// Policy pages: used by the page's hook and prefetched on the server by the page's layout
+export const policyQuery = (key: string, type: string) => ({
+  queryKey: [key],
+  queryFn: async (): Promise<ContentItem | null> =>
+    (await getAllContent()).find((item) => item.type === type) || null,
+});

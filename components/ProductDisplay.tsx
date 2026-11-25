@@ -10,7 +10,9 @@ export default function ProductDisplay({
   title,
   subtitle,
   products,
-}: ProductDisplayProps) {
+  headingLevel = "h2",
+}: ProductDisplayProps & { headingLevel?: "h1" | "h2" }) {
+  const Heading = headingLevel;
 
   const ITEMS_PER_PAGE = 8;
 
@@ -37,7 +39,7 @@ export default function ProductDisplay({
       
       {/* HEADER */}
       <div className="mb-6 flex flex-col text-center">
-        <span className={`text-[35px] md:text-[60px] ${caramel.className} text-[#b32126]`}>{title}</span>
+        <Heading className={`text-[35px] md:text-[60px] ${caramel.className} text-[#b32126]`}>{title}</Heading>
         <span className="arial-font text-[15px] md:text-[20px]  text-[#555]">{subtitle}</span>
       </div>
 

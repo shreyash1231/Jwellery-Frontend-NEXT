@@ -6,12 +6,57 @@ import TopBars from "@/components/TopBars";
 import Providers from "./providers";
 import { AuthProvider } from "@/components/context/AuthContext";
 import Reels from "@/components/Reels";
+import InjectedHtml from "@/components/InjectedHtml";
+import { Prefetched } from "@/lib/prefetch";
+import {
+  fetchCategories,
+  fetchFooterDetails,
+  fetchMarquee,
+  fetchShopProductFunction,
+  fetchSiteSettings,
+} from "@/service/dashboardService";
+import type { Metadata } from "next";
+import { getSeoSettings, getSiteUrl, imageUrl, toKeywords, summarize, jsonLd } from "@/lib/seo";
 
-export default function RootLayout({
+// Site-wide defaults; product, category and other pages override these
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSeoSettings();
+  const siteUrl = await getSiteUrl();
+  const share = imageUrl(settings.defaultShareImage);
+  const keywords = toKeywords(settings.defaultMetaKeywords);
+  return {
+    metadataBase: new URL(siteUrl),
+    title: { default: settings.defaultMetaTitle, template: `%s | ${settings.siteName}` },
+    description: summarize(settings.defaultMetaDescription, 300),
+    keywords: keywords.length ? keywords : undefined,
+    applicationName: settings.siteName,
+    openGraph: {
+      type: "website",
+      siteName: settings.siteName,
+      locale: "en_IN",
+      title: settings.defaultMetaTitle,
+      description: summarize(settings.defaultMetaDescription, 300),
+      images: share ? [{ url: share }] : undefined,
+    },
+    twitter: { card: share ? "summary_large_image" : "summary" },
+    robots: { index: true, follow: true },
+  };
+}
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const settings = await getSeoSettings();
+  const siteUrl = await getSiteUrl();
+  const organization = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: settings.siteName,
+    url: siteUrl,
+  };
+
   return (
     <html lang="en">
       <head>
@@ -40,9 +85,26 @@ fbq('track', 'PageView');`,
           />
         </noscript>
         {/* End Meta Pixel Code */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLd(organization) }}
+        />
+        {/* Header scripts from Admin > SEO Settings */}
+        <InjectedHtml html={settings.headerScripts} placement="head" />
       </head>
       <body className="bg-app min-h-screen flex flex-col">
         <Providers>
+          {/* Data the header, menu and footer share with every page, loaded on the server so the
+              navigation links are in the first HTML (and pages can render on the server too) */}
+          <Prefetched
+            queries={[
+              { queryKey: ["categories"], queryFn: fetchCategories },
+              { queryKey: ["shopbyProductfunction"], queryFn: fetchShopProductFunction },
+              { queryKey: ["site-settings"], queryFn: fetchSiteSettings },
+              { queryKey: ["marquee"], queryFn: fetchMarquee },
+              { queryKey: ["footer"], queryFn: fetchFooterDetails },
+            ]}
+          >
           <AuthProvider>
             <TopBars>
               <AnnouncementBar />
@@ -72,7 +134,10 @@ fbq('track', 'PageView');`,
             </a>
 
           </AuthProvider>
+          </Prefetched>
         </Providers>
+        {/* Footer scripts from Admin > SEO Settings */}
+        <InjectedHtml html={settings.footerScripts} placement="body" />
       </body>
     </html>
   );

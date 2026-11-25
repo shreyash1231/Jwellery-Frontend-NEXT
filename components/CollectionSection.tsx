@@ -6,13 +6,14 @@ import { caramel } from "@/app/fonts";
 import { useHomeCollections, useNewFeatures } from "@/hooks/useDashboard";
 import type { CollectionPlacement, HomeCollection } from "@/service/dashboardService";
 import CollectionProductCard from "./CollectionProductCard";
+import { collectionPath } from "@/lib/links";
 
 // Homepage shows this many products per collection; the rest are behind "View All"
 export const HOME_COLLECTION_LIMIT = 4;
 
 function CollectionBlock({ collection }: { collection: HomeCollection }) {
   const products = collection.products.slice(0, HOME_COLLECTION_LIMIT);
-  const href = `/collections/${collection._id}`;
+  const href = collectionPath(collection);
 
   return (
     <section className="relative isolate px-4 py-10 md:py-14">

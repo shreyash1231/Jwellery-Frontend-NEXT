@@ -1,109 +1,66 @@
-"use client";
+import type { Metadata } from "next";
+import { notFound, permanentRedirect } from "next/navigation";
+import CategoryDetail from "@/components/CategoryDetail";
+import { Prefetched } from "@/lib/prefetch";
+import {
+  fetchCategories,
+  fetchShopProductFunction,
+  fetchSiteSettings,
+  getProductsByCategory,
+} from "@/service/dashboardService";
+import { breadcrumbSchema, buildMetadata, categoryPath, getCategory, imageUrl, jsonLd, toKeywords } from "@/lib/seo";
 
-import { useParams } from "next/navigation";
-import Image from "next/image";
-import Link from "next/link";
-import ProductDisplay from "@/components/ProductDisplay";
-import { useAllCategories, useNewFeatures, useProductsByCategory } from "@/hooks/useDashboard";
-import Category from "@/components/Category";
-import Loader from "@/components/Loader";
-import { caramel } from "@/app/fonts";
-import { getParentId } from "@/lib/utils";
+type Props = { params: Promise<{ id: string }> };
 
-export default function CategoryPage() {
-  const params = useParams();
-  const categoryId = params?.id as string;
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const res = await getCategory(id);
+  // Don't inherit the /categories canonical from the parent layout
+  if (res.status !== "ok") return { alternates: { canonical: null } };
+  const c = res.data;
+  return buildMetadata({
+    absoluteTitle: c.metaTitle?.trim() || undefined,
+    title: c.metaTitle?.trim() ? undefined : c.name,
+    description: c.metaDescription || c.description,
+    keywords: toKeywords(c.metaKeywords, c.name, c.parentCategory?.name),
+    path: categoryPath(c),
+    images: [imageUrl(c.imageUrl)],
+  });
+}
 
-  const { data, isLoading } = useProductsByCategory(categoryId);
-  const { categories, isLoading: categoriesLoading } = useAllCategories();
-  const newFeatures = useNewFeatures();
+export default async function CategoryPage({ params }: Props) {
+  const { id } = await params;
+  const res = await getCategory(id);
 
-  if (isLoading || categoriesLoading) {
-    return <Loader/>;
+  if (res.status === "missing") notFound();
+  if (res.status === "error") return <CategoryDetail categoryId={id} />;
+
+  const category = res.data;
+  // Old links (/categories/<id> or a previous slug) move to the current readable URL
+  if (category.slug && decodeURIComponent(id) !== category.slug) {
+    permanentRedirect(categoryPath(category));
   }
 
-  const products = data?.data?.products || [];
-  const category = categories.find((c: any) => c._id === categoryId);
-  // Old version: no breadcrumb and no sub-category tiles
-  const parent = newFeatures
-    ? categories.find((c: any) => c._id === getParentId(category))
-    : undefined;
-  const subCategories = newFeatures
-    ? categories.filter((c: any) => getParentId(c) === categoryId)
-    : [];
+  const parent = category.parentCategory?.name ? category.parentCategory : null;
+  const breadcrumbs = await breadcrumbSchema([
+    ...(parent ? [{ name: parent.name as string, path: categoryPath(parent) }] : []),
+    { name: category.name, path: categoryPath(category) },
+  ]);
 
-  const title = category?.name || products[0]?.categoryId?.name || "";
-
+  // Products and category lists loaded on the server, so they are in the first HTML
   return (
-    <div className="arial-font">
-      {parent && (
-        <div className="max-w-[2050px] mx-auto px-6 pt-6 text-[15px] text-[#555]">
-          <Link href={`/categories/${parent._id}`} className="hover:text-[#b32126]">
-            {parent.name}
-          </Link>
-          <span className="mx-2">›</span>
-          <span className="text-[#b32126]">{title}</span>
-        </div>
-      )}
-
-      {subCategories.length > 0 && (
-        <div className="max-w-8xl mx-auto px-6 py-10">
-          <div className="flex flex-col p-4 text-center">
-            <span className={`${caramel.className} text-[35px] md:text-[60px] text-[#b32126]`}>
-              {title}
-            </span>
-            {category?.description && (
-              <span className="text-[15px] md:text-[20px] text-[#555]">
-                {category.description}
-              </span>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 xl:w-[1100px] mx-auto">
-            {subCategories.map((item: any) => (
-              <Link
-                key={item._id}
-                href={`/categories/${item._id}`}
-                className="block bg-[#fffbea] rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition"
-              >
-                <div className="relative w-full aspect-square">
-                  <Image
-                    src={`${process.env.NEXT_PUBLIC_IMAGE_BASE_URL}/${item.imageUrl}`}
-                    alt={item.name}
-                    fill
-                    sizes="(max-width: 768px) 50vw, 275px"
-                    className="object-cover"
-                  />
-                </div>
-                <h3 className={`${caramel.className} text-[#b32126] text-[24px] md:text-[32px] text-center py-3 px-2`}>
-                  {item.name}
-                </h3>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {products.length > 0 ? (
-        <ProductDisplay
-          title={subCategories.length > 0 ? `All ${title}` : title}
-          subtitle="Discover the magic of exquisite jewels that celebrate your special day with our endless love!"
-          products={products}
-        />
-      ) : subCategories.length === 0 && (
-         <div className="text-center py-16">
-    <img
-      src="/Images/item-not-found.webp"
-      alt="No products"
-      className="w-[220px] mx-auto mb-5 opacity-80"
-    />
-    <h3 className="text-xl mb-2">Product Not Found</h3>
-    <p className="text-gray-500">
-      No products are available right now.
-    </p>
-  </div>
-      )}
-      <Category/>
-    </div>
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbs) }} />
+      <Prefetched
+        queries={[
+          { queryKey: ["products", category._id], queryFn: () => getProductsByCategory(category._id) },
+          { queryKey: ["categories"], queryFn: fetchCategories },
+          { queryKey: ["shopbyProductfunction"], queryFn: fetchShopProductFunction },
+          { queryKey: ["site-settings"], queryFn: fetchSiteSettings },
+        ]}
+      >
+        <CategoryDetail categoryId={category._id} />
+      </Prefetched>
+    </>
   );
 }

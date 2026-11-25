@@ -75,6 +75,7 @@ export default function SignUp() {
               src="/Images/signupPage.jpg"
               alt="Sign up"
               fill
+              sizes="(max-width: 1024px) 50vw, 512px"
               className="object-cover"
               
               priority

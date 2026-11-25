@@ -58,9 +58,9 @@ export default function ContactUsCard() {
   };
   return (
 <div className="flex flex-col items-center justify-center min-h-screen p-4 md:p-6 arial-font">
-  <h2 className={`${caramel.className} text-[50px] text-center text-[#b32126]`}>
+  <h1 className={`${caramel.className} text-[50px] text-center text-[#b32126]`}>
     Contact Us
-  </h2>
+  </h1>
   <div className="text-[20px] text-[#555] text-center mb-4">
     Send us your custom order request/ query/ emergency info or order/ message
   </div>
@@ -75,6 +75,7 @@ export default function ContactUsCard() {
               src="/Images/DSC08861-Edit.jpeg"
               alt="Sign up"
               fill
+              sizes="(max-width: 1024px) 50vw, 512px"
               className="object-fill"
               priority
             />

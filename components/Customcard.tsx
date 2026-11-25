@@ -74,9 +74,9 @@ export default function Customcard() {
   };
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6 arial-font">
-      <h2 className={`${caramel.className} text-[50px] text-center text-[#b32126] mb-2`}>
+      <h1 className={`${caramel.className} text-[50px] text-center text-[#b32126] mb-2`}>
         Custom Orders
-      </h2>
+      </h1>
       <Card className="md:h-[500px] lg:h-[580px] xl:h-[620px] w-full max-w-5xl bg-[#fdf7e6] overflow-hidden p-0 shadow-xl rounded-3xl"> 
         <div className="flex h-full flex-col md:flex-row">
           
@@ -86,6 +86,7 @@ export default function Customcard() {
               src="/Images/horse-image.JPG"
               alt="Sign in"
               fill
+              sizes="(max-width: 1024px) 50vw, 512px"
               
               className="object-fill"
               priority
